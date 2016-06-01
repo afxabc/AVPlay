@@ -21,6 +21,7 @@ protected:
 // ÌØÐÔ
 public:
 	virtual void OnResetSize(int width, int height);
+	virtual void ReportParams(float x, float y, float scale, float rotate, int width, int height, const RECT& r);
 
 // ²Ù×÷
 public:

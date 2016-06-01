@@ -27,22 +27,19 @@ IMPLEMENT_DYNAMIC(CDrawWndD3d, CWnd)
 
 CDrawWndD3d::CDrawWndD3d()
 	: cb_(NULL)
-	, szPercent_(100)
-	, xCenter_(0)
-	, yCenter_(0)
-	, width_(100)
-	, height_(100)
-	, angle_(0.0f)
-	, distance_(ZMAX)
+	, scale_(100)
+	, xPos_(0.0f)
+	, yPos_(0.0f)
+	, width_(800)
+	, height_(600)
+	, rotation_(0.0f)
 	, pDirect3D_(NULL)
 	, pDirect3DDevice_(NULL)
 	, pDirect3DSurfaceRender_(NULL)
 	, pDirect3DSurfaceBk_(NULL)
 	, pDirect3DSprite_(NULL)
 	, pDirect3DTexture_(NULL)
-	, pDirect3DVertexBuffer_(NULL)
 {
-
 }
 
 CDrawWndD3d::~CDrawWndD3d()
@@ -53,9 +50,6 @@ void CDrawWndD3d::Cleanup()
 {
 	if (pDirect3DTexture_)
 		pDirect3DTexture_->Release(), pDirect3DTexture_ = NULL;
-
-	if (pDirect3DVertexBuffer_)
-		pDirect3DVertexBuffer_->Release(), pDirect3DVertexBuffer_ = NULL;
 
 	if (pDirect3DSprite_)
 		pDirect3DSprite_->Release(), pDirect3DSprite_ = NULL;
@@ -91,16 +85,9 @@ BOOL CDrawWndD3d::CreateDevice()
 		return FALSE;
 	}
 
-#ifdef USAGE_TEXTURE
-	ResetView();
-	ResetProject();
-#endif
+	pDirect3DDevice_->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 
 	return TRUE;
-}
-
-void CDrawWndD3d::ResetRect()
-{
 }
 
 void CDrawWndD3d::DrawFrame(const FrameData & f)
@@ -118,6 +105,23 @@ void CDrawWndD3d::DrawFrame(const FrameData & f)
 
 }
 
+void CDrawWndD3d::ResetCoordinate()
+{
+	//使用Surface matScale_, matRotate_, matTrans_
+	D3DXMatrixIdentity(&matSprite_);
+
+	xPos_ = 0.0f;
+	yPos_ = 0.0f;
+
+	scale_ = 100;
+	rotation_ = 0.0f;
+
+	UpdateMatSprite();
+
+	if (cb_)
+		cb_->OnResetSize(width_, height_);
+}
+
 //////////////////// 使用Surface //////////////////////////
 
 void CDrawWndD3d::RecalculateRect(BOOL render)
@@ -126,20 +130,20 @@ void CDrawWndD3d::RecalculateRect(BOOL render)
 	rectSrc_.right = width_;
 	rectSrc_.bottom = height_;
 
-	int WIDTH = width_*szPercent_ / 100;
-	int HEIGHT = height_*szPercent_ / 100;
+	int WIDTH = width_*scale_ / 100;
+	int HEIGHT = height_*scale_ / 100;
 
 	GetClientRect(&rectDst_);
 	int DW = (rectDst_.right - WIDTH) / 2;
 	int DH = (rectDst_.bottom - HEIGHT) / 2;
 
-	int dw = DW * 100 / szPercent_;
-	int dh = DH * 100 / szPercent_;
+	int dw = DW * 100 / scale_;
+	int dh = DH * 100 / scale_;
 
 	if (DW < 0)
 	{
 		rectSrc_.left = -dw;
-		rectSrc_.right = rectSrc_.left+rectDst_.right * 100 / szPercent_;
+		rectSrc_.right = rectSrc_.left+rectDst_.right * 100 / scale_;
 	}
 	else
 	{
@@ -150,7 +154,7 @@ void CDrawWndD3d::RecalculateRect(BOOL render)
 	if (DH < 0)
 	{
 		rectSrc_.top = -dh;
-		rectSrc_.bottom = rectSrc_.top+rectDst_.bottom * 100 / szPercent_;
+		rectSrc_.bottom = rectSrc_.top+rectDst_.bottom * 100 / scale_;
 	}
 	else
 	{
@@ -330,44 +334,6 @@ void CDrawWndD3d::RenderSurface()
 
 //////////////////// 使用Texture //////////////////////////
 
-void CDrawWndD3d::ResetView()
-{
-	if (pDirect3DDevice_ == NULL)
-		return;
-
-	//pDirect3DDevice_->SetRenderState(D3DRS_ZENABLE, D3DZB_TRUE);
-	pDirect3DDevice_->SetRenderState(D3DRS_LIGHTING, FALSE);
-	pDirect3DDevice_->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_POINT);
-
-
-	RECT rect;
-	GetClientRect(&rect);
-	distance_ = rect.bottom / 2;
-	D3DXVECTOR3 pEye = D3DXVECTOR3(0.0f, 0.0f, distance_);
-	D3DXVECTOR3 pAt = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
-	D3DXVECTOR3 pUp = D3DXVECTOR3(sinf(angle_ + D3DX_PI), cosf(angle_ + D3DX_PI), 0.0f);
-
-	D3DXMATRIX matview;
-	D3DXMatrixLookAtLH(&matview, &pEye, &pAt, &pUp);
-	HRESULT ret = pDirect3DDevice_->SetTransform(D3DTS_VIEW, &matview);
-}
-
-void CDrawWndD3d::ResetProject()
-{
-	if (pDirect3DDevice_ == NULL)
-		return;
-
-	D3DXMATRIX matproj;
-	RECT rect;
-	GetClientRect(&rect);
-
-	float r = (float)rect.right / (float)rect.bottom;
-//	float r = width_ / height_;
-	float fov = D3DX_PI / 2;
-	D3DXMatrixPerspectiveFovLH(&matproj, fov, r, ZMIN, ZMAX);
-	HRESULT ret = pDirect3DDevice_->SetTransform(D3DTS_PROJECTION, &matproj);
-}
-
 void CDrawWndD3d::ResetTexture(int width, int height)
 {
 	if (!pDirect3DDevice_ && !CreateDevice())
@@ -376,12 +342,10 @@ void CDrawWndD3d::ResetTexture(int width, int height)
 	if (pDirect3DTexture_)
 		pDirect3DTexture_->Release(), pDirect3DTexture_ = NULL;
 
-	if (pDirect3DVertexBuffer_)
-		pDirect3DVertexBuffer_->Release(), pDirect3DVertexBuffer_ = NULL;
-
 	width_ = width;
 	height_ = height;
-	ResetView();
+
+	UpdateMatSprite();
 
 	D3DFORMAT format;
 #if LOAD_YUV420P
@@ -400,46 +364,13 @@ void CDrawWndD3d::ResetTexture(int width, int height)
 		return;
 	}
 
-	// Create Vertex Buffer
-	ret = pDirect3DDevice_->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
-											0, D3DFVF_CUSTOMVERTEX, 
-											D3DPOOL_DEFAULT, 
-											&pDirect3DVertexBuffer_, NULL);
-	if (FAILED(ret)) 
-	{
-		LOGE("pDirect3DDevice_->CreateVertexBuffer !!");
-		return;
-	}
-
-	static const float x = -width_/2;
-	static const float y = -height_/2;
-	static const float z = 0.0f;
-	static const float rhw = 0.1f;
-	CUSTOMVERTEX vertices[] = {
-		{ x, y, z, 0.0f, 0.0f },
-		{ x+ width_, y, z, 1.0f, 0.0f },
-		{ x+ width_, y+height_, z, 1.0f, 1.0f },
-		{ x, y+height_,	z, 0.0f, 1.0f }
-	};
-
-	// Fill Vertex Buffer
-	CUSTOMVERTEX *pVertex;
-	ret = pDirect3DVertexBuffer_->Lock(0, 4 * sizeof(CUSTOMVERTEX), (void**)&pVertex, 0);
-	if (FAILED(ret)) 
-	{
-		LOGE("pDirect3DVertexBuffer_->Lock !!");
-		return;
-	}
-	memcpy(pVertex, vertices, sizeof(vertices));
-	pDirect3DVertexBuffer_->Unlock();
-
 	if (cb_)
 		cb_->OnResetSize(width, height);
 }
 
 void CDrawWndD3d::DrawTexture(const FrameData & f)
 {
-	if (pDirect3DTexture_ == NULL || pDirect3DVertexBuffer_ == NULL || width_ != f.width_ || height_ != f.height_)
+	if (pDirect3DTexture_ == NULL || width_ != f.width_ || height_ != f.height_)
 		ResetTexture(f.width_, f.height_);
 
 	D3DLOCKED_RECT d3d_rect;
@@ -488,44 +419,72 @@ void CDrawWndD3d::DrawTexture(const FrameData & f)
 	RenderTexture();
 }
 
-BOOL CDrawWndD3d::CreatepSprite()
-{
-	return 0;
-}
-
 void CDrawWndD3d::RenderTexture()
 {
-	if (pDirect3DDevice_ == NULL || 
-		(pDirect3DSprite_ == NULL && 
-			FAILED(D3DXCreateSprite(pDirect3DDevice_, &pDirect3DSprite_))))
+	if (pDirect3D_ == NULL || (pDirect3DDevice_ == NULL && !CreateDevice()))
 		return;
 
-	if (pDirect3DTexture_ == NULL || pDirect3DVertexBuffer_ == NULL)
+	if (pDirect3DSprite_ == NULL && FAILED(D3DXCreateSprite(pDirect3DDevice_, &pDirect3DSprite_)))
 		return;
 
 	if (pDirect3DDevice_->TestCooperativeLevel() == D3DERR_DEVICENOTRESET)
 	{
 		pDirect3DDevice_->Reset(&d3dpp_);
-		ResetView();
-		ResetProject();
+		D3DXCreateSprite(pDirect3DDevice_, &pDirect3DSprite_);
 	}
-	
+
 	pDirect3DDevice_->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 	pDirect3DDevice_->BeginScene();
 
-	pDirect3DDevice_->SetTexture(0, pDirect3DTexture_);
-	//Binds a vertex buffer to a device data stream.
-	pDirect3DDevice_->SetStreamSource(0, pDirect3DVertexBuffer_, 0, sizeof(CUSTOMVERTEX));
-	//Sets the current vertex stream declaration.
-	pDirect3DDevice_->SetFVF(D3DFVF_CUSTOMVERTEX);
-	//Renders a sequence of nonindexed, geometric primitives of the 
-	//specified type from the current set of data input streams.
-	pDirect3DDevice_->DrawPrimitive(D3DPT_TRIANGLEFAN, 0, 2);
-
+	if (pDirect3DTexture_ != NULL)
+	{
+		pDirect3DSprite_->Begin(D3DXSPRITE_ALPHABLEND);
+		pDirect3DSprite_->SetTransform(&matSprite_);
+		RECT r;
+		GetClientRect(&r);
+		D3DXVECTOR3 center(r.right / 2, r.bottom / 2 , 0);
+		pDirect3DSprite_->Draw(pDirect3DTexture_, NULL, NULL, NULL, 0xFFFFFFFF);
+		pDirect3DSprite_->End();
+	}
+	
 	pDirect3DDevice_->EndScene();
-	//Presents the contents of the next buffer in the sequence of back 
-	//buffers owned by the device.
 	pDirect3DDevice_->Present(NULL, NULL, NULL, NULL);
+}
+
+void CDrawWndD3d::UpdateMatSprite(BOOL render)
+{
+	RECT r;
+	GetClientRect(&r);
+
+	if (r.right == 0 || r.bottom == 0)
+		return;
+
+	float ratio_w = width_ /(float)r.right; 
+	float ratio_h = height_ / (float)r.bottom;
+
+	float scale_x = (scale_ / 100.0f)*ratio_w;
+	float scale_y = (scale_ / 100.0f)*ratio_h;
+
+	float width = width_*scale_x;
+	float height = height_*scale_y;
+
+	D3DXVECTOR2 rotation_center(width / 2, height / 2);
+	D3DXVECTOR2 scale_center(r.right/2+xPos_, r.bottom / 2+yPos_);
+
+	float x = (r.right - width) / 2;
+	float y = (r.bottom - height) / 2;
+
+	D3DXMatrixTransformation2D(&matSprite_, 
+		&scale_center, 0.0f,
+		&D3DXVECTOR2(scale_x, scale_y),
+		&rotation_center, rotation_,
+		&D3DXVECTOR2(xPos_, yPos_));
+
+	if (cb_)
+		cb_->ReportParams(xPos_, yPos_, scale_/100.0f, rotation_, width, height, r);
+
+	if (render)
+		RenderTexture();
 }
 
 ///////////////////////////////////////////////////////////
@@ -539,6 +498,11 @@ BEGIN_MESSAGE_MAP(CDrawWndD3d, CWnd)
 	ON_COMMAND(IDC_ZOOM_IN, &CDrawWndD3d::OnZoomIn)
 	ON_COMMAND(IDC_ZOOM_OUT, &CDrawWndD3d::OnZoomOut)
 	ON_WM_MOUSEWHEEL()
+	ON_WM_RBUTTONUP()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
+	ON_COMMAND(IDC_INIT_SIZE, &CDrawWndD3d::OnInitSize)
 END_MESSAGE_MAP()
 
 // CDrawWndD3d 消息处理程序
@@ -555,6 +519,8 @@ int CDrawWndD3d::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		LOGE("Direct3DCreate9 failed !!");
 		return -1;
 	}
+
+	ResetCoordinate();
 
 	return 0;
 }
@@ -573,9 +539,7 @@ void CDrawWndD3d::OnSize(UINT nType, int cx, int cy)
 	// TODO: 在此处添加消息处理程序代码
 
 #ifdef USAGE_TEXTURE
-	ResetProject();
-	ResetView();
-	RenderTexture();
+	UpdateMatSprite(TRUE);
 #else
 	/// 使用Surface ///
 	ResetSurfaceBk();
@@ -583,12 +547,19 @@ void CDrawWndD3d::OnSize(UINT nType, int cx, int cy)
 
 }
 
+void CDrawWndD3d::OnInitSize()
+{
+	// TODO: 在此添加命令处理程序代码
+	ResetCoordinate();
+}
+
 void CDrawWndD3d::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
+	rotation_ += D3DX_PI / 4;
+
 #ifdef USAGE_TEXTURE
-	angle_ += D3DX_PI / 4;
-	ResetView();
+	UpdateMatSprite(TRUE);
 #else
 #endif // USAGE_TEXTURE
 }
@@ -596,15 +567,14 @@ void CDrawWndD3d::OnRotateAngle()
 void CDrawWndD3d::OnZoomIn()
 {
 	// TODO: 在此添加命令处理程序代码
+	int SPAN = (scale_<100)?5:10;
+	scale_ += SPAN;
+	if (scale_ > 500)
+		scale_ = 500;
+
 #ifdef USAGE_TEXTURE
-	distance_ -= 10.0f;
-	if (distance_ < ZMIN)
-		distance_ = ZMIN;
-	ResetView();
+	UpdateMatSprite(TRUE);
 #else
-	szPercent_ += 10;
-	if (szPercent_ > 500)
-		szPercent_ = 500;
 	RecalculateRect(TRUE);
 #endif // USAGE_TEXTURE
 }
@@ -612,15 +582,14 @@ void CDrawWndD3d::OnZoomIn()
 void CDrawWndD3d::OnZoomOut()
 {
 	// TODO: 在此添加命令处理程序代码
+	int SPAN = (scale_<100) ? 5 : 10;
+	scale_ -= SPAN;
+	if (scale_ < 10)
+		scale_ = 10;
+
 #ifdef USAGE_TEXTURE
-	distance_ += 10.0f;
-	if (distance_ > ZMAX)
-		distance_ = ZMAX;
-	ResetView();
+	UpdateMatSprite(TRUE);
 #else
-	szPercent_ -= 10;
-	if (szPercent_ < 10)
-		szPercent_ = 10;
 	RecalculateRect(TRUE);
 #endif // USAGE_TEXTURE
 }
@@ -632,5 +601,47 @@ BOOL CDrawWndD3d::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		OnZoomIn();
 	else OnZoomOut();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
+
+}
+
+void CDrawWndD3d::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnRButtonUp(nFlags, point);
+	OnRotateAngle();
+}
+
+void CDrawWndD3d::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnLButtonDown(nFlags, point);
+	SetCapture();
+	posMove_ = point;
+}
+
+void CDrawWndD3d::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnLButtonUp(nFlags, point);
+	if (GetCapture() == this)
+	{
+		ReleaseCapture();
+		xPos_ += (point.x - posMove_.x);
+		yPos_ += (point.y - posMove_.y);
+		UpdateMatSprite(TRUE);
+	}
+}
+
+void CDrawWndD3d::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnMouseMove(nFlags, point);
+	if (GetCapture() == this)
+	{
+		xPos_ += (point.x - posMove_.x);
+		yPos_ += (point.y - posMove_.y);
+		UpdateMatSprite(TRUE);
+		posMove_ = point;
+	}
 }
 

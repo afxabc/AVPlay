@@ -94,7 +94,7 @@ BEGIN
     BUTTON      IDC_ZOOM_IN
     BUTTON      IDC_ZOOM_OUT
     SEPARATOR
-    BUTTON      IDC_ROTATE_ANGLE
+    BUTTON      IDC_INIT_SIZE
 END
 
 
@@ -126,6 +126,7 @@ BEGIN
         MENUITEM "拉近",                          IDC_ZOOM_IN
         MENUITEM "拉远",                          IDC_ZOOM_OUT
         MENUITEM "旋转",                          IDC_ROTATE_ANGLE
+        MENUITEM "原始尺寸",                        IDC_INIT_SIZE
     END
 END
 

@@ -4,12 +4,14 @@ class IChildViewCallback
 {
 public:
 	virtual void OnResetSize(int width, int height) = 0;
+	virtual void ReportParams(float x, float y, float scale, float rotate, int width, int height, const RECT& r) = 0;
 };
 
 /////////////////////////////////////////////////////
 
 #include "FrameData.h"
 #include <d3d9.h>
+#include <d3dx9.h>
 
 // CDrawWndD3d
 class CDrawWndD3d : public CWnd
@@ -24,14 +26,13 @@ public:
 	{
 		cb_ = cb;
 	}
-	void ResetRect();
+	void ResetRect() {};
 	void DrawFrame(const FrameData& f);
+	void ResetCoordinate();
 
 protected:
 	void Cleanup();
 	BOOL CreateDevice();
-	void ResetView();
-	void ResetProject();
 
 	void RecalculateRect(BOOL render = FALSE);
 	void ResetSurfaceBk();
@@ -40,11 +41,10 @@ protected:
 	void RenderSurface();
 	void DrawSurface(const FrameData& f);
 
+	void UpdateMatSprite(BOOL render = FALSE);
 	void ResetTexture(int width, int height);
-	BOOL CreatepSprite();
 	void RenderTexture();
 	void DrawTexture(const FrameData& f);
-
 
 protected:
 	IChildViewCallback* cb_;
@@ -55,24 +55,22 @@ protected:
 	D3DPRESENT_PARAMETERS d3dpp_;
 	IDirect3DDevice9* pDirect3DDevice_;
 
+	int scale_;	//szPercent_/100
+	int xPos_;
+	int yPos_;
+	POINT posMove_;
+
 	//USAGE_SURFACE
-	int szPercent_;	//szPercent_/100
-	int xCenter_;
-	int yCenter_;
 	RECT rectDst_;
 	RECT rectSrc_;
 	IDirect3DSurface9* pDirect3DSurfaceRender_;
 	IDirect3DSurface9* pDirect3DSurfaceBk_;
 
 	//USAGE_TEXTURE
-	static const int ZMIN = 1;
-	static const int ZMAX = 1000;
-	float angle_;
-	float distance_;
-	IDirect3DTexture9* pDirect3DTexture_;
+	float rotation_;
 	ID3DXSprite* pDirect3DSprite_;
 	D3DXMATRIX matSprite_;
-	IDirect3DVertexBuffer9* pDirect3DVertexBuffer_;
+	IDirect3DTexture9* pDirect3DTexture_;
 
 	// 生成的消息映射函数
 protected:
@@ -85,6 +83,11 @@ public:
 	afx_msg void OnZoomIn();
 	afx_msg void OnZoomOut();
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnInitSize();
 };
 
 

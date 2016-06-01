@@ -28,12 +28,11 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_WINDOWPOSCHANGED()
 END_MESSAGE_MAP()
 
+#define ID_INDICATOR_PARAMS 1
 static UINT indicators[] =
 {
 	ID_SEPARATOR,           // 状态行指示器
-	ID_INDICATOR_CAPS,
-	ID_INDICATOR_NUM,
-	ID_INDICATOR_SCRL,
+	ID_INDICATOR_PARAMS,
 };
 
 // CMainFrame 构造/析构
@@ -63,6 +62,13 @@ void CMainFrame::OnResetSize(int width, int height)
 	this->CenterWindow();
 }
 
+void CMainFrame::ReportParams(float x, float y, float scale, float rotate, int width, int height, const RECT & r)
+{
+	CString str;
+	str.Format("POS(%.2f, %.2f); scale=%.2f; rotate=%.2f; width=%d; height=%d; RECT(%d, %d)", x, y, scale, rotate, width, height, r.right, r.bottom);
+	m_wndStatusBar.SetPaneText(1, str);
+}
+
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
@@ -90,6 +96,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 未能创建
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
+	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 120);
+	m_wndStatusBar.SetPaneStyle(1, SBPS_STRETCH | SBPS_NORMAL);
 
 	// TODO: 如果不需要可停靠工具栏，则删除这三行
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
@@ -100,6 +108,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	LOGPRINT(&CMainFrame::print, this);
 	player_.setDecodeFinish(boost::bind(&CMainFrame::onFrameData, this, _1));
 
+	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
 	return 0;
 }
 
@@ -195,6 +204,7 @@ void CMainFrame::OnFilePlay()
 		if (!checkFilePath())
 			OnFileOpen();
 		player_.startPlay(fipath_);
+		m_wndView.ResetCoordinate();
 	}
 	else
 	{
