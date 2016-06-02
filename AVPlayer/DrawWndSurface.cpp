@@ -12,6 +12,7 @@ CDrawWndSurface::CDrawWndSurface()
 
 CDrawWndSurface::~CDrawWndSurface()
 {
+	Cleanup();
 }
 
 void CDrawWndSurface::Cleanup()

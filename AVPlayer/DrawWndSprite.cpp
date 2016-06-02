@@ -11,6 +11,7 @@ CDrawWndSprite::CDrawWndSprite()
 
 CDrawWndSprite::~CDrawWndSprite()
 {
+	Cleanup();
 }
 
 void CDrawWndSprite::Cleanup()

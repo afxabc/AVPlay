@@ -7,8 +7,8 @@
 class CDrawWndDDraw : public IDrawWndHandle
 {
 public:
-	CDrawWndDDraw();
-	~CDrawWndDDraw();
+	CDrawWndDDraw(CWnd* wnd);
+	virtual ~CDrawWndDDraw();
 
 	virtual BOOL IsValid()
 	{
@@ -22,19 +22,19 @@ public:
 
 	virtual void OnFrmSizeChange(int cx, int cy)
 	{
-		ResetSurface(cx, cy);
+		ResetSurfaceFrm(cx, cy);
 	}
 
 protected:
-	BOOL ResetSurface(int width, int height);
+	BOOL ResetSurfaceBk(const SIZE& szWnd);
+	BOOL ResetSurfaceFrm(int width, int height);
+	BOOL ResetSurface(int width, int height, LPDIRECTDRAWSURFACE* ppSurface);
 
 protected:
-
+	CWnd* rectWnd_;
 	RECT rect_;
+	CSize szWnd_;
 
-	//directx
-	int width_;
-	int height_;
-	LPDIRECTDRAW lpDirectDraw_;	LPDIRECTDRAWSURFACE lpSurface_, lpBkSurface_;	LPDIRECTDRAWCLIPPER lpClipper_;
+	LPDIRECTDRAW lpDirectDraw_;	LPDIRECTDRAWSURFACE lpSurface_, lpSurfaceBk_, lpSurfaceFrm_;	LPDIRECTDRAWCLIPPER lpClipper_;
 };
 

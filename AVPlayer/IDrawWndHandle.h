@@ -5,6 +5,8 @@
 class IDrawWndHandle
 {
 public:
+	virtual ~IDrawWndHandle() {}
+
 	virtual BOOL IsValid() = 0;
 	virtual void Cleanup() = 0;
 	virtual BOOL CreateDevice(HWND hwnd) = 0;

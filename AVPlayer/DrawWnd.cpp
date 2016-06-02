@@ -65,6 +65,7 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_COMMAND(IDC_ZOOM_IN, &CDrawWnd::OnZoomIn)
 	ON_COMMAND(IDC_ZOOM_OUT, &CDrawWnd::OnZoomOut)
 	ON_COMMAND(IDC_INIT_SIZE, &CDrawWnd::OnInitSize)
+	ON_WM_LBUTTONDBLCLK()
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -78,7 +79,7 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 //	pHandle_ = new CDrawWndSurface();
 //	pHandle_ = new CDrawWndSprite();
-	pHandle_ = new CDrawWndDDraw();
+	pHandle_ = new CDrawWndDDraw(this);
 
 	return 0;
 }
@@ -88,7 +89,6 @@ void CDrawWnd::OnDestroy()
 	CWnd::OnDestroy();
 
 	// TODO: 在此处添加消息处理程序代码
-	pHandle_->Cleanup();
 	delete pHandle_;
 	pHandle_ = NULL;
 }
@@ -142,7 +142,7 @@ void CDrawWnd::OnLButtonUp(UINT nFlags, CPoint point)
 		ReleaseCapture();
 		xPos_ += (point.x - posMove_.x);
 		yPos_ += (point.y - posMove_.y);
-		UpdateCoordinate();
+		UpdateCoordinate(TRUE);
 	}
 }
 
@@ -154,7 +154,7 @@ void CDrawWnd::OnMouseMove(UINT nFlags, CPoint point)
 	{
 		xPos_ += (point.x - posMove_.x);
 		yPos_ += (point.y - posMove_.y);
-		UpdateCoordinate();
+		UpdateCoordinate(TRUE);
 		posMove_ = point;
 	}
 }
@@ -163,7 +163,7 @@ void CDrawWnd::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
 	rotation_ += PI / 4;
-	UpdateCoordinate();
+	UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnZoomIn()
@@ -173,7 +173,7 @@ void CDrawWnd::OnZoomIn()
 	scale_ += SPAN;
 	if (scale_ > 500)
 		scale_ = 500;
-	UpdateCoordinate();
+	UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnZoomOut()
@@ -183,7 +183,7 @@ void CDrawWnd::OnZoomOut()
 	scale_ -= SPAN;
 	if (scale_ < 5)
 		scale_ = 5;
-	UpdateCoordinate();
+	UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnInitSize()
@@ -193,8 +193,16 @@ void CDrawWnd::OnInitSize()
 	yPos_ = 0;
 	scale_ = 100;
 	rotation_ = 0.0f;
-	UpdateCoordinate();
+	UpdateCoordinate(TRUE);
 
 	if (cb_)
 		cb_->OnResetSize(width_, height_);
+}
+
+
+void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnLButtonDblClk(nFlags, point);
+	OnInitSize();
 }
