@@ -31,13 +31,15 @@ public:
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)
 	{
-		pHandle_->UpdateCoordinate(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
+		if (pHandle_)
+		{
+			pHandle_->UpdateCoordinate(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
+			if (render)
+				pHandle_->Render();
+		}
 
 		if (cb_)
 			cb_->ReportParams(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
-
-		if (render)
-			pHandle_->Render();
 	}
 
 protected:
@@ -74,6 +76,7 @@ protected:
 
 public:
 	afx_msg void OnInitSize();
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 };
 
 

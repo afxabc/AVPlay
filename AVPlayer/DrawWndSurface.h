@@ -8,7 +8,7 @@ class CDrawWndSurface : public IDrawWndHandle
 {
 public:
 	CDrawWndSurface();
-	~CDrawWndSurface();
+	virtual ~CDrawWndSurface();
 
 	virtual BOOL IsValid()
 	{

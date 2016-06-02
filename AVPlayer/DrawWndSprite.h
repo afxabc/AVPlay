@@ -9,7 +9,7 @@ class CDrawWndSprite : public IDrawWndHandle
 {
 public:
 	CDrawWndSprite();
-	~CDrawWndSprite();
+	virtual ~CDrawWndSprite();
 
 	virtual BOOL IsValid()
 	{

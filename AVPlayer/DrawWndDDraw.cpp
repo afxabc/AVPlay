@@ -2,10 +2,13 @@
 #include "DrawWndDDraw.h"
 
 
-CDrawWndDDraw::CDrawWndDDraw()
-	: lpDirectDraw_(NULL)
+CDrawWndDDraw::CDrawWndDDraw(CWnd* wnd)
+	: rectWnd_(wnd)
+	, szWnd_(0, 0)
+	, lpDirectDraw_(NULL)
 	, lpSurface_(NULL)
-	, lpBkSurface_(NULL)
+	, lpSurfaceBk_(NULL)
+	, lpSurfaceFrm_(NULL)
 	, lpClipper_(NULL)
 {
 }
@@ -13,6 +16,7 @@ CDrawWndDDraw::CDrawWndDDraw()
 
 CDrawWndDDraw::~CDrawWndDDraw()
 {
+	Cleanup();
 }
 
 void CDrawWndDDraw::Cleanup()
@@ -20,8 +24,11 @@ void CDrawWndDDraw::Cleanup()
 	if (lpSurface_)
 		lpSurface_->Release(), lpSurface_ = NULL;
 
-	if (lpBkSurface_)
-		lpBkSurface_->Release(), lpBkSurface_ = NULL;
+	if (lpSurfaceBk_)
+		lpSurfaceBk_->Release(), lpSurfaceBk_ = NULL;
+
+	if (lpSurfaceFrm_)
+		lpSurfaceFrm_->Release(), lpSurfaceFrm_ = NULL;
 
 	if (lpClipper_)
 		lpClipper_->Release(), lpClipper_ = NULL;
@@ -70,37 +77,35 @@ BOOL CDrawWndDDraw::CreateDevice(HWND hwnd)
 		return FALSE;
 	}
 
-	/*
-	ZeroMemory(&desc, sizeof(desc));
-	desc.dwSize = sizeof(desc);
-	if (lpSurface_->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) == DD_OK)
-	{
-		memset(desc.lpSurface, 0, desc.lPitch * 4 * desc.dwHeight);
-		lpSurface_->Unlock(NULL);
-	}
-	*/
-
 	return TRUE;
 }
 
 void CDrawWndDDraw::UpdateCoordinate(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
-	rect_.left = (szWnd.cx - szFrm.cx) / 2;
-	rect_.right = rect_.left + szFrm.cx;
-	rect_.top = (szWnd.cy - szFrm.cy) / 2;
-	rect_.bottom = rect_.top + szFrm.cy;
-	//	this->ClientToScreen(&rect_);
+	float WIDTH = szFrm.cx*scale;
+	float HEIGHT = szFrm.cy*scale;
+
+	rect_.left = (szWnd.cx - WIDTH) / 2;
+	rect_.left += pos.x;
+	rect_.right = rect_.left + WIDTH;
+
+	rect_.top = (szWnd.cy - HEIGHT) / 2;
+	rect_.top += pos.y;
+	rect_.bottom = rect_.top + HEIGHT;
+
+	if (szWnd_ != szWnd)
+		ResetSurfaceBk(szWnd);
 }
 
 void CDrawWndDDraw::DrawFrame(const BYTE * pSrc, int width, int height)
 {
-	if (lpBkSurface_ == NULL && !ResetSurface(width_, height_))
+	if (lpSurfaceFrm_ == NULL && !ResetSurfaceFrm(width, height))
 		return;
 
 	DDSURFACEDESC desc;
 	ZeroMemory(&desc, sizeof(desc));
 	desc.dwSize = sizeof(desc);
-	if (lpBkSurface_->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK)
+	if (lpSurfaceFrm_->Lock(NULL, &desc, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL) != DD_OK)
 	{
 		LOGE("lpBkSurface_->Lock failed !!");
 		return;
@@ -136,51 +141,76 @@ void CDrawWndDDraw::DrawFrame(const BYTE * pSrc, int width, int height)
 	else memcpy(pDest, pSrc, pixel_w_size*height);
 #endif
 
-	lpBkSurface_->Unlock(NULL);
+	lpSurfaceFrm_->Unlock(NULL);
 
 	Render();
 }
 
 void CDrawWndDDraw::Render()
 {
-	if (lpSurface_ == NULL)
+	if (lpSurface_ == NULL || lpSurfaceBk_ == NULL)
 		return;
 
-	if (lpBkSurface_ != NULL)
+	DDBLTFX  ddbltfx;
+	memset(&ddbltfx, 0, sizeof(ddbltfx));
+	ddbltfx.dwSize = sizeof(ddbltfx);
+	ddbltfx.dwFillColor = RGB(0, 0, 0); 
+	lpSurfaceBk_->Blt(NULL, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
+
+	if (lpSurfaceFrm_ != NULL)
 	{
-		DDBLTFX  ddbltfx;
 		memset(&ddbltfx, 0, sizeof(ddbltfx));
 		ddbltfx.dwSize = sizeof(ddbltfx);
 		ddbltfx.dwROP = SRCCOPY;
 		ddbltfx.dwRotationAngle = 0;
 		ddbltfx.dwDDFX = DDBLTFX_NOTEARING;
-		lpSurface_->Blt(&rect_, lpBkSurface_, NULL, DDBLT_WAIT, &ddbltfx);// | DDBLT_ROTATIONANGLE | DDBLT_DDFX
+		lpSurfaceBk_->Blt(&rect_, lpSurfaceFrm_, NULL, DDBLT_WAIT, &ddbltfx);// | DDBLT_ROTATIONANGLE | DDBLT_DDFX
 	}
+
+	ddbltfx.dwROP = SRCCOPY;
+	ddbltfx.dwDDFX = DDBLTFX_NOTEARING;
+	RECT rect = rect_;
+	if (rectWnd_)
+		rectWnd_->ClientToScreen(&rect);
+	lpSurface_->Blt(&rect, lpSurfaceBk_, NULL, DDBLT_WAIT, &ddbltfx);
 }
 
-BOOL CDrawWndDDraw::ResetSurface(int width, int height)
+BOOL CDrawWndDDraw::ResetSurfaceBk(const SIZE & szWnd)
+{
+	if (!ResetSurface(szWnd.cx, szWnd.cy, &lpSurfaceBk_))
+		return FALSE;
+	szWnd_ = szWnd;
+	return TRUE;
+}
+
+BOOL CDrawWndDDraw::ResetSurfaceFrm(int width, int height)
+{
+	return ResetSurface(width, height, &lpSurfaceFrm_);
+}
+
+BOOL CDrawWndDDraw::ResetSurface(int width, int height, LPDIRECTDRAWSURFACE * ppSurface)
 {
 	if (!lpDirectDraw_)
 		return FALSE;
 
-	if (lpBkSurface_)
-		lpBkSurface_->Release(), lpBkSurface_ = NULL;
+	if (*ppSurface)
+		(*ppSurface)->Release(), *ppSurface = NULL;
 
 	DDSURFACEDESC desc;
 	ZeroMemory(&desc, sizeof(desc));
 	desc.dwSize = sizeof(desc);
 	desc.dwFlags = DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS;
-	width_ = desc.dwWidth = width;
-	height_ = desc.dwHeight = height;
-	desc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
-	if (lpDirectDraw_->CreateSurface(&desc, &lpBkSurface_, NULL) != DD_OK)
+	desc.dwWidth = width;
+	desc.dwHeight = height;
+	desc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
+	if (lpDirectDraw_->CreateSurface(&desc, ppSurface, NULL) != DD_OK)
 	{
 		LOGW("DDSCAPS_VIDEOMEMORY failed, try DDSCAPS_SYSTEMMEMORY !");
 		desc.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
-		if (lpDirectDraw_->CreateSurface(&desc, &lpBkSurface_, NULL) != DD_OK)
+		if (lpDirectDraw_->CreateSurface(&desc, ppSurface, NULL) != DD_OK)
 		{
 			LOGE("DDSCAPS_SYSTEMMEMORY failed !!!");
-			lpBkSurface_ = NULL;
+			*ppSurface = NULL;
 			return FALSE;
 		}
 	}
