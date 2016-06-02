@@ -4,13 +4,11 @@
 
 #pragma once
 
-//#include "ChildView.h"
-//#include "DrawWnd.h"
-#include "DrawWndD3d.h"
+#include "DrawWnd.h"
 #include "Player.h"
 #include "base\queue.h"
 
-class CMainFrame : public CFrameWnd, IChildViewCallback
+class CMainFrame : public CFrameWnd, IDrawWndCallback
 {
 	
 public:
@@ -21,7 +19,7 @@ protected:
 // 特性
 public:
 	virtual void OnResetSize(int width, int height);
-	virtual void ReportParams(float x, float y, float scale, float rotate, int width, int height, const RECT& r);
+	virtual void ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 
 // 操作
 public:
@@ -45,9 +43,7 @@ public:
 protected:  // 控件条嵌入成员
 	CToolBar          m_wndToolBar;
 	CStatusBar        m_wndStatusBar;
-//	CChildView    m_wndView;
-//	CDrawWnd    m_wndView;
-	CDrawWndD3d    m_wndView;
+	CDrawWnd    m_wndView;
 	Player player_;
 	CString fipath_;
 	Queue<FrameData> frms_;

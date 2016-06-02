@@ -191,9 +191,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AVPlayer.h" />
-    <ClInclude Include="ChildView.h" />
-    <ClInclude Include="DrawWndD3d.h" />
+    <ClInclude Include="DrawWnd.h" />
+    <ClInclude Include="DrawWndDDraw.h" />
+    <ClInclude Include="DrawWndSprite.h" />
+    <ClInclude Include="DrawWndSurface.h" />
     <ClInclude Include="FrameData.h" />
+    <ClInclude Include="IDrawWndHandle.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Resource.h" />
@@ -203,8 +206,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AVPlayer.cpp" />
-    <ClCompile Include="ChildView.cpp" />
-    <ClCompile Include="DrawWndD3d.cpp" />
+    <ClCompile Include="DrawWnd.cpp" />
+    <ClCompile Include="DrawWndDDraw.cpp" />
+    <ClCompile Include="DrawWndSprite.cpp" />
+    <ClCompile Include="DrawWndSurface.cpp" />
     <ClCompile Include="FrameData.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="Player.cpp" />

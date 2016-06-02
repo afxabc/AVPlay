@@ -62,10 +62,10 @@ void CMainFrame::OnResetSize(int width, int height)
 	this->CenterWindow();
 }
 
-void CMainFrame::ReportParams(float x, float y, float scale, float rotate, int width, int height, const RECT & r)
+void CMainFrame::ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
 	CString str;
-	str.Format("POS(%.2f, %.2f); scale=%.2f; rotate=%.2f; width=%d; height=%d; RECT(%d, %d)", x, y, scale, rotate, width, height, r.right, r.bottom);
+	str.Format("scale=%.2f; rotate=%.2f; pos(%d, %d); szFrm(%d, %d); szWnd(%d, %d)", scale, rotate, pos.x, pos.y, szFrm.cx, szFrm.cy, szWnd.cx, szWnd.cy);
 	m_wndStatusBar.SetPaneText(1, str);
 }
 
@@ -204,7 +204,7 @@ void CMainFrame::OnFilePlay()
 		if (!checkFilePath())
 			OnFileOpen();
 		player_.startPlay(fipath_);
-		m_wndView.ResetCoordinate();
+		m_wndView.OnInitSize();
 	}
 	else
 	{
@@ -248,5 +248,4 @@ void CMainFrame::OnWindowPosChanged(WINDOWPOS* lpwndpos)
 	CFrameWnd::OnWindowPosChanged(lpwndpos);
 
 	// TODO: 在此处添加消息处理程序代码
-	m_wndView.ResetRect();
 }

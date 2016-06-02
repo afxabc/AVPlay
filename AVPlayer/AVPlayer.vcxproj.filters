@@ -42,10 +42,19 @@
     <ClInclude Include="timequeue.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ChildView.h">
+    <ClInclude Include="DrawWnd.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DrawWndD3d.h">
+    <ClInclude Include="DrawWndSurface.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawWndSprite.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="IDrawWndHandle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawWndDDraw.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,10 +74,16 @@
     <ClCompile Include="FrameData.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ChildView.cpp">
+    <ClCompile Include="DrawWnd.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DrawWndD3d.cpp">
+    <ClCompile Include="DrawWndSurface.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawWndSprite.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawWndDDraw.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
