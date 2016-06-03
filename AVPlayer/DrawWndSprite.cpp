@@ -62,7 +62,7 @@ BOOL CDrawWndSprite::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndSprite::UpdateCoordinate(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndSprite::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
 	float ratio_w = (float)szFrm.cx / (float)szWnd.cx;
 	float ratio_h = (float)szFrm.cy / (float)szWnd.cy;
@@ -79,10 +79,11 @@ void CDrawWndSprite::UpdateCoordinate(float scale, float rotate, POINT pos, SIZE
 	float x = (szWnd.cx - width) / 2;
 	float y = (szWnd.cy - height) / 2;
 
+	static const float angle[ROTATION_N] = { 0.0f, D3DX_PI*0.5f, D3DX_PI, D3DX_PI*1.5f };
 	D3DXMatrixTransformation2D(&matSprite_,
 		&scale_center, 0.0f,
 		&D3DXVECTOR2(scale_x, scale_y),
-		&rotation_center, rotate,
+		&rotation_center, angle[rotate],
 		&D3DXVECTOR2(pos.x, pos.y));
 }
 

@@ -80,10 +80,10 @@ BOOL CDrawWndDDraw::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndDDraw::UpdateCoordinate(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndDDraw::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
-	float WIDTH = szFrm.cx*scale;
-	float HEIGHT = szFrm.cy*scale;
+	float WIDTH = (float)szFrm.cx*scale;
+	float HEIGHT = (float)szFrm.cy*scale;
 
 	rect_.left = (szWnd.cx - WIDTH) / 2;
 	rect_.left += pos.x;
@@ -171,7 +171,10 @@ void CDrawWndDDraw::Render()
 	ddbltfx.dwDDFX = DDBLTFX_NOTEARING;
 	RECT rect = rect_;
 	if (rectWnd_)
+	{
+		rectWnd_->GetClientRect(&rect);
 		rectWnd_->ClientToScreen(&rect);
+	}
 	lpSurface_->Blt(&rect, lpSurfaceBk_, NULL, DDBLT_WAIT, &ddbltfx);
 }
 
@@ -179,6 +182,7 @@ BOOL CDrawWndDDraw::ResetSurfaceBk(const SIZE & szWnd)
 {
 	if (!ResetSurface(szWnd.cx, szWnd.cy, &lpSurfaceBk_))
 		return FALSE;
+	lpSurfaceBk_->SetClipper(lpClipper_);
 	szWnd_ = szWnd;
 	return TRUE;
 }

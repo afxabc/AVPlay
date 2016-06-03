@@ -3,13 +3,12 @@
 #include "DrawWndHandle.h"
 
 #include <d3d9.h>
-#include <d3dx9.h>
 
-class CDrawWndSprite : public IDrawWndHandle
+class CDrawWndVertex : public IDrawWndHandle
 {
 public:
-	CDrawWndSprite();
-	virtual ~CDrawWndSprite();
+	CDrawWndVertex();
+	~CDrawWndVertex();
 
 	virtual BOOL IsValid()
 	{
@@ -34,8 +33,7 @@ protected:
 	D3DPRESENT_PARAMETERS d3dpp_;
 	IDirect3DDevice9* pDirect3DDevice_;
 
-	ID3DXSprite* pDirect3DSprite_;
-	D3DXMATRIX matSprite_;
+	IDirect3DVertexBuffer9* pDirect3DVertexBuffer_;
 	IDirect3DTexture9* pDirect3DTexture_;
 
 };

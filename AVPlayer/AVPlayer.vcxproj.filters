@@ -51,10 +51,13 @@
     <ClInclude Include="DrawWndSprite.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="IDrawWndHandle.h">
+    <ClInclude Include="DrawWndDDraw.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DrawWndDDraw.h">
+    <ClInclude Include="DrawWndHandle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawWndVertex.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -84,6 +87,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DrawWndDDraw.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawWndVertex.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

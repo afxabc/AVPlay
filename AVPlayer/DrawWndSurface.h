@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IDrawWndHandle.h"
+#include "DrawWndHandle.h"
 
 #include <d3d9.h>
 
@@ -16,7 +16,7 @@ public:
 	}
 	virtual void Cleanup();
 	virtual BOOL CreateDevice(HWND hwnd);
-	virtual void UpdateCoordinate(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd);
+	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 	virtual void DrawFrame(const BYTE* pSrc, int width, int height);
 	virtual void Render(); 
 

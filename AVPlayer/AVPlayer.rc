@@ -125,8 +125,16 @@ BEGIN
     BEGIN
         MENUITEM "拉近",                          IDC_ZOOM_IN
         MENUITEM "拉远",                          IDC_ZOOM_OUT
+        MENUITEM SEPARATOR
         MENUITEM "旋转",                          IDC_ROTATE_ANGLE
         MENUITEM "原始尺寸",                        IDC_INIT_SIZE
+    END
+    POPUP "显示"
+    BEGIN
+        MENUITEM "DirectDraw",                  IDC_SHOW_DIRECTDRAW
+        MENUITEM "D3dSurface",                  IDC_SHOW_D3DSURFACE
+        MENUITEM "D3dSpirit",                   IDC_SHOW_D3DSPIRIT
+        MENUITEM "D3dVertex",                   IDC_SHOW_D3DVERTEX
     END
 END
 

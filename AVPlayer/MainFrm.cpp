@@ -204,7 +204,7 @@ void CMainFrame::OnFilePlay()
 		if (!checkFilePath())
 			OnFileOpen();
 		player_.startPlay(fipath_);
-		m_wndView.OnInitSize();
+		m_wndView.ResetDrawWndHandle();
 	}
 	else
 	{

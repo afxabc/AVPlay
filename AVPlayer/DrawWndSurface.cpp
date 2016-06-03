@@ -63,7 +63,7 @@ BOOL CDrawWndSurface::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndSurface::UpdateCoordinate(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndSurface::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
 	if (pDirect3DSurfaceBk_ == NULL || szSurfaceBk_ != szWnd)
 	{

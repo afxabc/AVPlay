@@ -5,11 +5,11 @@
 #include "AVPlayer.h"
 #include "DrawWnd.h"
 
+#include "DrawWndDDraw.h"
 #include "DrawWndSurface.h"
 #include "DrawWndSprite.h"
-#include "DrawWndDDraw.h"
+#include "DrawWndVertex.h"
 
-#define PI 3.1415926f
 // CDrawWnd
 
 IMPLEMENT_DYNAMIC(CDrawWnd, CWnd)
@@ -24,7 +24,7 @@ CDrawWnd::CDrawWnd()
 	, height_(601)
 	, WIDTH_(801)
 	, HEIGHT_(601)
-	, rotation_(0.0f)
+	, rotation_(ROTATION_0)
 {
 }
 
@@ -50,6 +50,18 @@ void CDrawWnd::DrawFrame(const FrameData & f)
 	pHandle_->DrawFrame(f.data_, f.width_, f.height_);
 }
 
+void CDrawWnd::ResetDrawWndHandle()
+{
+	if (!pHandle_)
+		return;
+
+	if (pHandle_->IsValid())
+		pHandle_->Cleanup();
+
+	pHandle_->CreateDevice(GetSafeHwnd());
+	OnInitSize();
+}
+
 //////////////////////////////////////////////////////////////////
 
 BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
@@ -65,6 +77,7 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_COMMAND(IDC_ZOOM_IN, &CDrawWnd::OnZoomIn)
 	ON_COMMAND(IDC_ZOOM_OUT, &CDrawWnd::OnZoomOut)
 	ON_COMMAND(IDC_INIT_SIZE, &CDrawWnd::OnInitSize)
+	ON_COMMAND_RANGE(IDC_SHOW_START, IDC_SHOW_END, &CDrawWnd::OnDrawWndHandle)
 	ON_WM_LBUTTONDBLCLK()
 END_MESSAGE_MAP()
 
@@ -77,9 +90,10 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// TODO:  在此添加您专用的创建代码
 
+//	pHandle_ = new CDrawWndDDraw(this);
 //	pHandle_ = new CDrawWndSurface();
 //	pHandle_ = new CDrawWndSprite();
-	pHandle_ = new CDrawWndDDraw(this);
+	pHandle_ = new CDrawWndVertex();
 
 	return 0;
 }
@@ -162,7 +176,7 @@ void CDrawWnd::OnMouseMove(UINT nFlags, CPoint point)
 void CDrawWnd::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
-	rotation_ += PI / 4;
+	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
 	UpdateCoordinate(TRUE);
 }
 
@@ -192,17 +206,40 @@ void CDrawWnd::OnInitSize()
 	xPos_ = 0;
 	yPos_ = 0;
 	scale_ = 100;
-	rotation_ = 0.0f;
+	rotation_ = ROTATION_0;
 	UpdateCoordinate(TRUE);
 
 	if (cb_)
 		cb_->OnResetSize(width_, height_);
 }
 
-
 void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	CWnd::OnLButtonDblClk(nFlags, point);
 	OnInitSize();
+}
+
+void CDrawWnd::OnDrawWndHandle(UINT which)
+{
+	if (pHandle_)
+	delete pHandle_, pHandle_ = NULL;
+
+	switch (which)
+	{
+	case IDC_SHOW_DIRECTDRAW:
+		pHandle_ = new CDrawWndDDraw(this);
+		break;
+	case IDC_SHOW_D3DSURFACE:
+		pHandle_ = new CDrawWndSurface();
+		break;
+	case IDC_SHOW_D3DSPIRIT:
+		pHandle_ = new CDrawWndSprite();
+		break;
+	case IDC_SHOW_D3DVERTEX:
+		pHandle_ = new CDrawWndVertex();
+		break;
+	}
+
+	ResetDrawWndHandle();
 }

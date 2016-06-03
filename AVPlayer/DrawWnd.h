@@ -9,7 +9,7 @@ public:
 };
 
 #include "FrameData.h"
-#include "IDrawWndHandle.h"
+#include "DrawWndHandle.h"
 
 // CDrawWnd
 
@@ -27,6 +27,7 @@ public:
 	}
 
 	void DrawFrame(const FrameData& f);
+	void ResetDrawWndHandle();
 
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)
@@ -55,7 +56,7 @@ protected:
 	int xPos_;
 	int yPos_;
 	POINT posMove_;
-	float rotation_;
+	ROTATIONTYPE rotation_;
 
 	IDrawWndHandle* pHandle_;
 
@@ -73,10 +74,9 @@ protected:
 	afx_msg void OnRotateAngle();
 	afx_msg void OnZoomIn();
 	afx_msg void OnZoomOut();
-
-public:
 	afx_msg void OnInitSize();
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnDrawWndHandle(UINT which);
 };
 
 

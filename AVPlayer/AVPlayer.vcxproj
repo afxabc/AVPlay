@@ -195,8 +195,9 @@
     <ClInclude Include="DrawWndDDraw.h" />
     <ClInclude Include="DrawWndSprite.h" />
     <ClInclude Include="DrawWndSurface.h" />
+    <ClInclude Include="DrawWndVertex.h" />
     <ClInclude Include="FrameData.h" />
-    <ClInclude Include="IDrawWndHandle.h" />
+    <ClInclude Include="DrawWndHandle.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Resource.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="DrawWndDDraw.cpp" />
     <ClCompile Include="DrawWndSprite.cpp" />
     <ClCompile Include="DrawWndSurface.cpp" />
+    <ClCompile Include="DrawWndVertex.cpp" />
     <ClCompile Include="FrameData.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="Player.cpp" />
