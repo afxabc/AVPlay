@@ -82,8 +82,8 @@ void CDrawWndSurface::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT p
 	rectDst_.right = szWnd.cx;
 	rectDst_.bottom = szWnd.cy;
 
-	float DW = (rectDst_.right - WIDTH) / 2;
-	float DH = (rectDst_.bottom - HEIGHT) / 2;
+	float DW = (rectDst_.right - WIDTH) / 2 + pos.x;
+	float DH = (rectDst_.bottom - HEIGHT) / 2 + pos.y;
 
 	float dw = DW / scale;
 	float dh = DH / scale;

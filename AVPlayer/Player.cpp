@@ -216,6 +216,8 @@ void Player::decodeLoop()
 
 	}
 
+
+	av_packet_unref(&packet);
 	if (sContext != NULL)
 		sws_freeContext(sContext);
 

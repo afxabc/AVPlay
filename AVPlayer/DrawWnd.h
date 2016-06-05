@@ -59,6 +59,7 @@ protected:
 	ROTATIONTYPE rotation_;
 
 	IDrawWndHandle* pHandle_;
+	UINT idHandle_;
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -77,6 +78,10 @@ protected:
 	afx_msg void OnInitSize();
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnDrawWndHandle(UINT which);
+	afx_msg void OnUpdateShowDDraw(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateShowSurface(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateShowSpirit(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
 };
 
 

@@ -84,7 +84,7 @@ BOOL CDrawWndVertex::CreateDevice(HWND hwnd)
 	float x = 0.0f;
 	float y = 0.0f;
 	float z = 0.0f;
-	float rhw = 10.0f;
+	float rhw = 1.0f;
 	CUSTOMVERTEX vertices[] = {
 		{ x, y, z, rhw, 0.0f, 0.0f },
 		{ x, y, z, rhw, 1.0f, 0.0f },
@@ -130,6 +130,8 @@ void CDrawWndVertex::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT po
 	int p1 = (rotate + 1) % ROTATION_N;
 	int p2 = (rotate + 2) % ROTATION_N;
 	int p3 = (rotate + 3) % ROTATION_N;
+
+	vertex[p0].rhw = vertex[p1].rhw = vertex[p2].rhw = vertex[p3].rhw = 1/scale;
 
 	vertex[p0].x = x; vertex[p0].y = y;				//(0,0)
 	vertex[p1].x = x+WIDTH; vertex[p1].y = y;			//(1,0)

@@ -25,6 +25,7 @@ CDrawWnd::CDrawWnd()
 	, WIDTH_(801)
 	, HEIGHT_(601)
 	, rotation_(ROTATION_0)
+	, idHandle_(0)
 {
 }
 
@@ -42,7 +43,7 @@ void CDrawWnd::DrawFrame(const FrameData & f)
 		width_ = f.width_;
 		height_ = f.height_;
 		pHandle_->OnFrmSizeChange(f.width_, f.height_);
-		UpdateCoordinate();
+/*		UpdateCoordinate();*/
 		if (cb_)
 			cb_->OnResetSize(width_, height_);
 	}
@@ -59,7 +60,7 @@ void CDrawWnd::ResetDrawWndHandle()
 		pHandle_->Cleanup();
 
 	pHandle_->CreateDevice(GetSafeHwnd());
-	OnInitSize();
+	UpdateCoordinate(TRUE);
 }
 
 //////////////////////////////////////////////////////////////////
@@ -77,8 +78,13 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_COMMAND(IDC_ZOOM_IN, &CDrawWnd::OnZoomIn)
 	ON_COMMAND(IDC_ZOOM_OUT, &CDrawWnd::OnZoomOut)
 	ON_COMMAND(IDC_INIT_SIZE, &CDrawWnd::OnInitSize)
-	ON_COMMAND_RANGE(IDC_SHOW_START, IDC_SHOW_END, &CDrawWnd::OnDrawWndHandle)
 	ON_WM_LBUTTONDBLCLK()
+	ON_COMMAND_RANGE(IDC_SHOW_START, IDC_SHOW_END, &CDrawWnd::OnDrawWndHandle)
+	ON_UPDATE_COMMAND_UI(IDC_SHOW_DIRECTDRAW, &CDrawWnd::OnUpdateShowDDraw)
+	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DSURFACE, &CDrawWnd::OnUpdateShowSurface)
+	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DSPIRIT, &CDrawWnd::OnUpdateShowSpirit)
+	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DVERTEX, &CDrawWnd::OnUpdateShowVertex)
+
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -90,10 +96,7 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// TODO:  在此添加您专用的创建代码
 
-//	pHandle_ = new CDrawWndDDraw(this);
-//	pHandle_ = new CDrawWndSurface();
-//	pHandle_ = new CDrawWndSprite();
-	pHandle_ = new CDrawWndVertex();
+	OnDrawWndHandle(IDC_SHOW_D3DVERTEX);
 
 	return 0;
 }
@@ -112,15 +115,17 @@ void CDrawWnd::OnSize(UINT nType, int cx, int cy)
 	CWnd::OnSize(nType, cx, cy);
 
 	// TODO: 在此处添加消息处理程序代码
+	WIDTH_ = cx;
+	HEIGHT_ = cy;
+	/*
 	if (pHandle_ == NULL)
 		return;
 
 	if (!pHandle_->IsValid())
 		pHandle_->CreateDevice(GetSafeHwnd());
 
-	WIDTH_ = cx;
-	HEIGHT_ = cy;
-	UpdateCoordinate(TRUE);
+	UpdateCoordinate(TRUE);*/
+	this->PostMessage(WM_COMMAND, idHandle_);
 }
 
 BOOL CDrawWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
@@ -222,6 +227,11 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CDrawWnd::OnDrawWndHandle(UINT which)
 {
+//	if (which == idHandle_)
+//		return;
+
+	idHandle_ = which;
+
 	if (pHandle_)
 	delete pHandle_, pHandle_ = NULL;
 
@@ -242,4 +252,24 @@ void CDrawWnd::OnDrawWndHandle(UINT which)
 	}
 
 	ResetDrawWndHandle();
+}
+
+void CDrawWnd::OnUpdateShowDDraw(CCmdUI * pCmdUI)
+{
+	pCmdUI->SetCheck(IDC_SHOW_DIRECTDRAW == idHandle_);
+}
+
+void CDrawWnd::OnUpdateShowSurface(CCmdUI * pCmdUI)
+{
+	pCmdUI->SetCheck(IDC_SHOW_D3DSURFACE == idHandle_);
+}
+
+void CDrawWnd::OnUpdateShowSpirit(CCmdUI * pCmdUI)
+{
+	pCmdUI->SetCheck(IDC_SHOW_D3DSPIRIT == idHandle_);
+}
+
+void CDrawWnd::OnUpdateShowVertex(CCmdUI * pCmdUI)
+{
+	pCmdUI->SetCheck(IDC_SHOW_D3DVERTEX == idHandle_);
 }
