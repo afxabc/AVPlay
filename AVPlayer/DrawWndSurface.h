@@ -16,7 +16,7 @@ public:
 	}
 	virtual void Cleanup();
 	virtual BOOL CreateDevice(HWND hwnd);
-	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
+	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd);
 	virtual void DrawFrame(const BYTE* pSrc, int width, int height);
 	virtual void Render(); 
 

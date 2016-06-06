@@ -16,7 +16,9 @@ public:
 	}
 	virtual void Cleanup();
 	virtual BOOL CreateDevice(HWND hwnd);
-	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
+	virtual BOOL ResetDevice(const BYTE* pSrc, int width, int height, HWND hwnd);
+
+	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd);
 	virtual void DrawFrame(const BYTE* pSrc, int width, int height);
 	virtual void Render();
 
@@ -27,6 +29,7 @@ public:
 
 protected:
 	BOOL ResetTexture(int width, int height);
+	BOOL ResetVertex();
 
 protected:
 	IDirect3D9* pDirect3D_;

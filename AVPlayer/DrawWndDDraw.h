@@ -16,7 +16,7 @@ public:
 	}
 	virtual void Cleanup();
 	virtual BOOL CreateDevice(HWND hwnd);
-	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
+	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd);
 	virtual void DrawFrame(const BYTE* pSrc, int width, int height);
 	virtual void Render();
 
@@ -27,13 +27,15 @@ public:
 
 protected:
 	BOOL ResetSurfaceBk(const SIZE& szWnd);
-	BOOL ResetSurfaceFrm(int width, int height);
+	BOOL ResetSurfaceFrm(int width, int height, LPBYTE data = NULL);
 	BOOL ResetSurface(int width, int height, LPDIRECTDRAWSURFACE* ppSurface);
 
 protected:
 	CWnd* rectWnd_;
 	RECT rect_;
 	CSize szWnd_;
+	CSize szFrm_;
+	ROTATIONTYPE rotate_;
 
 	LPDIRECTDRAW lpDirectDraw_;	LPDIRECTDRAWSURFACE lpSurface_, lpSurfaceBk_, lpSurfaceFrm_;	LPDIRECTDRAWCLIPPER lpClipper_;
 };

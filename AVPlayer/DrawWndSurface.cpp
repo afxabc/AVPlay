@@ -63,8 +63,14 @@ BOOL CDrawWndSurface::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndSurface::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndSurface::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd)
 {
+	CSize szFrm(frm.width_, frm.height_);
+
+	RECT r;
+	::GetClientRect(hwnd, &r);
+	CSize szWnd(r.right, r.bottom);
+
 	if (pDirect3DSurfaceBk_ == NULL || szSurfaceBk_ != szWnd)
 	{
 		if (ResetSurfaceBk(szWnd.cx, szWnd.cy))

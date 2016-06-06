@@ -61,7 +61,7 @@ BOOL CDrawWndVertex::CreateDevice(HWND hwnd)
 	d3dpp_.BackBufferFormat = D3DFMT_UNKNOWN;
 
 	HRESULT ret = pDirect3D_->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd,
-		D3DCREATE_MIXED_VERTEXPROCESSING | D3DCREATE_NOWINDOWCHANGES,
+		D3DCREATE_MIXED_VERTEXPROCESSING,
 		&d3dpp_, &pDirect3DDevice_);
 	if (FAILED(ret))
 	{
@@ -71,42 +71,36 @@ BOOL CDrawWndVertex::CreateDevice(HWND hwnd)
 	}
 	pDirect3DDevice_->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
 
-	ret = pDirect3DDevice_->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
-		0, D3DFVF_CUSTOMVERTEX,
-		D3DPOOL_DEFAULT,
-		&pDirect3DVertexBuffer_, NULL);
-	if (FAILED(ret))
+	return ResetVertex();
+}
+
+BOOL CDrawWndVertex::ResetDevice(const BYTE * pSrc, int width, int height, HWND hwnd)
+{
+	if (pDirect3DDevice_ == NULL)
 	{
-		LOGE("pDirect3DDevice_->CreateVertexBuffer !!");
-		return FALSE;
+		CreateDevice(hwnd);
+	}
+	else
+	{
+		pDirect3DDevice_->Reset(&d3dpp_);
+		ResetVertex();
 	}
 
-	float x = 0.0f;
-	float y = 0.0f;
-	float z = 0.0f;
-	float rhw = 1.0f;
-	CUSTOMVERTEX vertices[] = {
-		{ x, y, z, rhw, 0.0f, 0.0f },
-		{ x, y, z, rhw, 1.0f, 0.0f },
-		{ x, y, z, rhw, 1.0f, 1.0f },
-		{ x, y, z, rhw, 0.0f, 1.0f }
-	};
-
-	// Fill Vertex Buffer
-	CUSTOMVERTEX *pVertex;
-	ret = pDirect3DVertexBuffer_->Lock(0, 4 * sizeof(CUSTOMVERTEX), (void**)&pVertex, 0);
-	if (!FAILED(ret))
-	{
-		memcpy(pVertex, vertices, sizeof(vertices));
-		pDirect3DVertexBuffer_->Unlock();
-	}
-	else LOGE("pDirect3DVertexBuffer_->Lock !!");
+	DrawFrame(pSrc, width, height);
 
 	return TRUE;
 }
 
-void CDrawWndVertex::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndVertex::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd)
 {
+	CSize szFrm(frm.width_, frm.height_);
+
+	RECT r;
+	::GetClientRect(hwnd, &r);
+	CSize szWnd(r.right, r.bottom);
+
+	ResetDevice(frm.data_, frm.width_, frm.height_, hwnd);
+
 	if (pDirect3DVertexBuffer_ == NULL)
 		return;
 
@@ -143,6 +137,12 @@ void CDrawWndVertex::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT po
 
 void CDrawWndVertex::DrawFrame(const BYTE * pSrc, int width, int height)
 {
+	if (pSrc == NULL || width <= 0 || height <= 0)
+	{
+		Render();
+		return;
+	}
+
 	if (pDirect3DTexture_ == NULL && !ResetTexture(width, height))
 		return;
 
@@ -240,6 +240,48 @@ BOOL CDrawWndVertex::ResetTexture(int width, int height)
 		LOGE("pDirect3DDevice_->CreateTexture !!");
 		return FALSE;
 	}
+
+	return TRUE;
+}
+
+BOOL CDrawWndVertex::ResetVertex()
+{
+	if (pDirect3DDevice_ == NULL)
+		return FALSE;
+
+	if (pDirect3DVertexBuffer_)
+		pDirect3DVertexBuffer_->Release(), pDirect3DVertexBuffer_ = NULL;
+
+	HRESULT ret = pDirect3DDevice_->CreateVertexBuffer(4 * sizeof(CUSTOMVERTEX),
+		0, D3DFVF_CUSTOMVERTEX,
+		D3DPOOL_MANAGED,
+		&pDirect3DVertexBuffer_, NULL);
+	if (FAILED(ret))
+	{
+		LOGE("pDirect3DDevice_->CreateVertexBuffer !!");
+		return FALSE;
+	}
+
+	float x = 0.0f;
+	float y = 0.0f;
+	float z = 0.0f;
+	float rhw = 1.0f;
+	CUSTOMVERTEX vertices[] = {
+		{ x, y, z, rhw, 0.0f, 0.0f },
+		{ x, y, z, rhw, 1.0f, 0.0f },
+		{ x, y, z, rhw, 1.0f, 1.0f },
+		{ x, y, z, rhw, 0.0f, 1.0f }
+	};
+
+	// Fill Vertex Buffer
+	CUSTOMVERTEX *pVertex;
+	ret = pDirect3DVertexBuffer_->Lock(0, 4 * sizeof(CUSTOMVERTEX), (void**)&pVertex, 0);
+	if (!FAILED(ret))
+	{
+		memcpy(pVertex, vertices, sizeof(vertices));
+		pDirect3DVertexBuffer_->Unlock();
+	}
+	else LOGE("pDirect3DVertexBuffer_->Lock !!");
 
 	return TRUE;
 }

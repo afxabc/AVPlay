@@ -5,6 +5,8 @@
 CDrawWndDDraw::CDrawWndDDraw(CWnd* wnd)
 	: rectWnd_(wnd)
 	, szWnd_(0, 0)
+	, szFrm_(0, 0)
+	, rotate_(ROTATION_0)
 	, lpDirectDraw_(NULL)
 	, lpSurface_(NULL)
 	, lpSurfaceBk_(NULL)
@@ -80,8 +82,21 @@ BOOL CDrawWndDDraw::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndDDraw::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndDDraw::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd)
 {
+	rotate_ = rotate;
+	CSize szFrm(frm.width_, frm.height_);
+	if (rotate == ROTATION_90 || rotate == ROTATION_270)
+	{
+		int tmp = szFrm.cx;
+		szFrm.cx = szFrm.cy;
+		szFrm.cy = tmp;
+	}
+
+	RECT r;
+	::GetClientRect(hwnd, &r);
+	CSize szWnd(r.right, r.bottom);
+
 	float WIDTH = (float)szFrm.cx*scale;
 	float HEIGHT = (float)szFrm.cy*scale;
 
@@ -95,12 +110,26 @@ void CDrawWndDDraw::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos
 
 	if (szWnd_ != szWnd)
 		ResetSurfaceBk(szWnd);
+
+	if (szFrm_ != szFrm)
+	{
+		szFrm_ = szFrm;
+		ResetSurfaceFrm(frm.width_, frm.height_, frm.data_);
+	}
 }
 
 void CDrawWndDDraw::DrawFrame(const BYTE * pSrc, int width, int height)
 {
-	if (lpSurfaceFrm_ == NULL && !ResetSurfaceFrm(width, height))
-		return;
+	if (lpSurfaceFrm_ == NULL)
+	{
+		BOOL ret = FALSE;
+		if (rotate_ == ROTATION_90 || rotate_ == ROTATION_270)
+			ret = ResetSurfaceFrm(height, width);
+		else ret = ResetSurfaceFrm(width, height);
+
+		if (!ret)
+			return;
+	}
 
 	DDSURFACEDESC desc;
 	ZeroMemory(&desc, sizeof(desc));
@@ -114,7 +143,8 @@ void CDrawWndDDraw::DrawFrame(const BYTE * pSrc, int width, int height)
 	//
 	BYTE* pDest = (BYTE *)desc.lpSurface;
 	int stride = desc.lPitch;
-	unsigned long i = 0;
+	int i = 0;
+	int j = 0;
 
 	//Copy Data
 #if LOAD_YUV420P
@@ -129,16 +159,39 @@ void CDrawWndDDraw::DrawFrame(const BYTE * pSrc, int width, int height)
 	}
 #else
 	int pixel_w_size = width * 4;
-	if (stride != pixel_w_size)
+	if (rotate_ == ROTATION_0 || rotate_ == ROTATION_180)
 	{
+		if (rotate_ == ROTATION_180)
+		{
+			pSrc = pSrc + pixel_w_size*(height - 1);
+			pixel_w_size  = -pixel_w_size;
+		}
+
 		for (i = 0; i< height; i++)
 		{
-			memcpy(pDest, pSrc, pixel_w_size);
+			memcpy(pDest, pSrc, abs(pixel_w_size));
 			pDest += stride;
 			pSrc += pixel_w_size;
 		}
 	}
-	else memcpy(pDest, pSrc, pixel_w_size*height);
+	else
+	{
+		if (rotate_ == ROTATION_90)
+		{
+			pSrc = pSrc + pixel_w_size*(height - 1);
+			pixel_w_size  = -pixel_w_size;
+		}
+
+		for (i = 0; i < width; i++)
+		{
+			for (j = 0; j < height; j++)
+			{
+				memcpy(pDest+j*4, pSrc+ pixel_w_size*j+i*4, 4);
+			}
+			pDest += stride;
+		}
+
+	}
 #endif
 
 	lpSurfaceFrm_->Unlock(NULL);
@@ -187,9 +240,13 @@ BOOL CDrawWndDDraw::ResetSurfaceBk(const SIZE & szWnd)
 	return TRUE;
 }
 
-BOOL CDrawWndDDraw::ResetSurfaceFrm(int width, int height)
+BOOL CDrawWndDDraw::ResetSurfaceFrm(int width, int height, LPBYTE data)
 {
-	return ResetSurface(width, height, &lpSurfaceFrm_);
+	if (!ResetSurface(szFrm_.cx, szFrm_.cy, &lpSurfaceFrm_))
+		return FALSE;
+
+	if (data != NULL)
+		DrawFrame(data, width, height);
 }
 
 BOOL CDrawWndDDraw::ResetSurface(int width, int height, LPDIRECTDRAWSURFACE * ppSurface)

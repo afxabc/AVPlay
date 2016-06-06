@@ -49,6 +49,8 @@ void CDrawWnd::DrawFrame(const FrameData & f)
 	}
 
 	pHandle_->DrawFrame(f.data_, f.width_, f.height_);
+
+	frmBak_ = f;
 }
 
 void CDrawWnd::ResetDrawWndHandle()
@@ -78,6 +80,7 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_COMMAND(IDC_ZOOM_IN, &CDrawWnd::OnZoomIn)
 	ON_COMMAND(IDC_ZOOM_OUT, &CDrawWnd::OnZoomOut)
 	ON_COMMAND(IDC_INIT_SIZE, &CDrawWnd::OnInitSize)
+	ON_COMMAND(IDC_RESET_DEVICE, &CDrawWnd::OnResetDevice)
 	ON_WM_LBUTTONDBLCLK()
 	ON_COMMAND_RANGE(IDC_SHOW_START, IDC_SHOW_END, &CDrawWnd::OnDrawWndHandle)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_DIRECTDRAW, &CDrawWnd::OnUpdateShowDDraw)
@@ -96,7 +99,7 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// TODO:  在此添加您专用的创建代码
 
-	OnDrawWndHandle(IDC_SHOW_D3DVERTEX);
+	OnDrawWndHandle(IDC_SHOW_DIRECTDRAW);
 
 	return 0;
 }
@@ -117,15 +120,8 @@ void CDrawWnd::OnSize(UINT nType, int cx, int cy)
 	// TODO: 在此处添加消息处理程序代码
 	WIDTH_ = cx;
 	HEIGHT_ = cy;
-	/*
-	if (pHandle_ == NULL)
-		return;
-
-	if (!pHandle_->IsValid())
-		pHandle_->CreateDevice(GetSafeHwnd());
-
-	UpdateCoordinate(TRUE);*/
-	this->PostMessage(WM_COMMAND, idHandle_);
+	
+	this->PostMessage(WM_COMMAND, IDC_RESET_DEVICE);
 }
 
 BOOL CDrawWnd::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
@@ -218,6 +214,14 @@ void CDrawWnd::OnInitSize()
 		cb_->OnResetSize(width_, height_);
 }
 
+void CDrawWnd::OnResetDevice()
+{
+	if (pHandle_ == NULL)
+		return;
+
+	UpdateCoordinate(TRUE);
+}
+
 void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
@@ -227,8 +231,8 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CDrawWnd::OnDrawWndHandle(UINT which)
 {
-//	if (which == idHandle_)
-//		return;
+	if (which == idHandle_)
+		return;
 
 	idHandle_ = which;
 

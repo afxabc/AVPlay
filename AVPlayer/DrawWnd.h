@@ -8,7 +8,6 @@ public:
 	virtual void ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
 };
 
-#include "FrameData.h"
 #include "DrawWndHandle.h"
 
 // CDrawWnd
@@ -34,7 +33,7 @@ protected:
 	{
 		if (pHandle_)
 		{
-			pHandle_->UpdateCoordinate(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
+			pHandle_->UpdateCoordinate(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), frmBak_, this->GetSafeHwnd());
 			if (render)
 				pHandle_->Render();
 		}
@@ -61,6 +60,8 @@ protected:
 	IDrawWndHandle* pHandle_;
 	UINT idHandle_;
 
+	FrameData frmBak_;
+
 protected:
 	DECLARE_MESSAGE_MAP()
 
@@ -76,6 +77,7 @@ protected:
 	afx_msg void OnZoomIn();
 	afx_msg void OnZoomOut();
 	afx_msg void OnInitSize();
+	afx_msg void OnResetDevice();
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnDrawWndHandle(UINT which);
 	afx_msg void OnUpdateShowDDraw(CCmdUI *pCmdUI);

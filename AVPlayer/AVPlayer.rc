@@ -86,15 +86,8 @@ IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
 
 IDR_MAINFRAME TOOLBAR 16, 15
 BEGIN
-    BUTTON      ID_FILE_OPEN
-    SEPARATOR
     BUTTON      ID_FILE_PLAY
-    SEPARATOR
-    BUTTON      ID_APP_ABOUT
-    BUTTON      IDC_ZOOM_IN
-    BUTTON      IDC_ZOOM_OUT
-    SEPARATOR
-    BUTTON      IDC_INIT_SIZE
+    BUTTON      ID_FILE_PAUSE
 END
 
 
@@ -109,6 +102,7 @@ BEGIN
     BEGIN
         MENUITEM "打开",                          ID_FILE_OPEN
         MENUITEM "播放",                          ID_FILE_PLAY
+        MENUITEM "暂停",                          ID_FILE_PAUSE
         MENUITEM SEPARATOR
         MENUITEM "退出(&X)",                      ID_APP_EXIT
     END
@@ -116,10 +110,6 @@ BEGIN
     BEGIN
         MENUITEM "工具栏(&T)",                     ID_VIEW_TOOLBAR
         MENUITEM "状态栏(&S)",                     ID_VIEW_STATUS_BAR
-    END
-    POPUP "帮助(&H)"
-    BEGIN
-        MENUITEM "关于 AVPlayer(&A)...",          ID_APP_ABOUT
     END
     POPUP "操作"
     BEGIN
@@ -135,6 +125,10 @@ BEGIN
         MENUITEM "D3dSurface",                  IDC_SHOW_D3DSURFACE
         MENUITEM "D3dSpirit",                   IDC_SHOW_D3DSPIRIT
         MENUITEM "D3dVertex",                   IDC_SHOW_D3DVERTEX
+    END
+    POPUP "帮助(&H)"
+    BEGIN
+        MENUITEM "关于 AVPlayer(&A)...",          ID_APP_ABOUT
     END
 END
 
@@ -328,6 +322,11 @@ END
 STRINGTABLE
 BEGIN
     ID_FILE_PLAY            "播放\n播放"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_PAUSE           "暂停\n暂停"
 END
 
 #endif    // 中文(简体，中国) resources

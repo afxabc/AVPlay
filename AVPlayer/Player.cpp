@@ -57,6 +57,7 @@ Player::Player()
 	: pFormatCtx_(NULL)
 	, pCodecCtx_(NULL)
 	, pCodec_(NULL)
+	, paused_(true)
 {
 	av_register_all();
 	pFormatCtx_ = avformat_alloc_context();
@@ -143,6 +144,9 @@ static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, D
 
 void Player::onTimer()
 {
+	if (paused_)
+		return;
+
 	timeBase_ += TIMER;
 	sigDecode_.on();
 	sigPlay_.on();
@@ -158,6 +162,8 @@ void Player::decodeLoop()
 
 	double q2d = av_q2d(pFormatCtx_->streams[videoindex_]->time_base);
 
+	paused_ = false;
+
 	timeBase_ = 0;
 	timeDts_ = 10000;
 	timePts_ = 10000;
@@ -166,6 +172,7 @@ void Player::decodeLoop()
 	sigDecode_.off();
 	while (thDecode_.started())
 	{
+//		av_packet_unref(&packet);
 		if (av_read_frame(pFormatCtx_, &packet) < 0)
 			break;
 

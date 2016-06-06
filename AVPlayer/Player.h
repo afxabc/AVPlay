@@ -65,6 +65,16 @@ public:
 		return (thDecode_.started());
 	}
 
+	bool isPaused()
+	{
+		return paused_;
+	}
+
+	void setPaused(bool paused)
+	{
+		paused_ = paused;
+	}
+
 	void onTimer();
 
 private:
@@ -82,6 +92,7 @@ private:
 	int64_t		timePts_;
 	static const int TIMER = 10;
 	mutable Mutex mutexPts_;
+	bool paused_;
 
 	Thread thDecode_;
 	Signal sigDecode_;

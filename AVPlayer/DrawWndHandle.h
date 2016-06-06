@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FrameData.h"
 #include "base\log.h"
 
 typedef enum _ROTATIONTYPE {
@@ -19,7 +20,7 @@ public:
 	virtual void Cleanup() = 0;
 	virtual BOOL CreateDevice(HWND hwnd) = 0;
 
-	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
+	virtual void UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd) = 0;
 
 	virtual void OnFrmSizeChange(int cx, int cy) = 0;
 	virtual void DrawFrame(const BYTE* pSrc, int width, int height) = 0;

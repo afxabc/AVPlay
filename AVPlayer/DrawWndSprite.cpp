@@ -62,8 +62,14 @@ BOOL CDrawWndSprite::CreateDevice(HWND hwnd)
 	return TRUE;
 }
 
-void CDrawWndSprite::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CDrawWndSprite::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT pos, const FrameData& frm, HWND hwnd)
 {
+	CSize szFrm(frm.width_, frm.height_);
+
+	RECT r;
+	::GetClientRect(hwnd, &r);
+	CSize szWnd(r.right, r.bottom);
+
 	float ratio_w = (float)szFrm.cx / (float)szWnd.cx;
 	float ratio_h = (float)szFrm.cy / (float)szWnd.cy;
 
