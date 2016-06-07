@@ -75,15 +75,26 @@ public:
 		paused_ = paused;
 	}
 
-	void seek(int ms)
+	void seekTime(int64_t ms)
 	{
-		timeSeek_ = timeBase_+ms;
+		seeked_ = true;
+		timeSeek_ = ms;
+	}
+
+	int64_t getTime()
+	{
+		return timeBase_;
+	}
+
+	int64_t getTimeTotal()
+	{
+		return timeTotal_;
 	}
 
 	void onTimer();
 
 private:
-	void decodeLoop();
+	void decodeLoop(double q2d);
 	void playLoop();
 
 private:
@@ -92,6 +103,7 @@ private:
 	AVCodec         *pCodec_;
 	int videoindex_;
 
+	int64_t		timeTotal_;
 	int64_t		timeBase_;
 	int64_t		timeSeek_;
 	int64_t		timeDts_;
@@ -99,6 +111,7 @@ private:
 	static const int TIMER = 10;
 	mutable Mutex mutexPts_;
 	bool paused_;
+	bool seeked_;
 
 	Thread thDecode_;
 	Signal sigDecode_;

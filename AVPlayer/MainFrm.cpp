@@ -31,11 +31,11 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(IDC_SEEK_FORWARD, &CMainFrame::OnSeekForward)
 END_MESSAGE_MAP()
 
-#define ID_INDICATOR_PARAMS 1
 static UINT indicators[] =
 {
 	ID_SEPARATOR,           // 状态行指示器
-	ID_INDICATOR_PARAMS,
+	ID_SEPARATOR,           // 
+	ID_SEPARATOR,           // 
 };
 
 // CMainFrame 构造/析构
@@ -69,7 +69,7 @@ void CMainFrame::ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, 
 {
 	CString str;
 	str.Format("scale=%.2f; rotate=%.2f; pos(%d, %d); szFrm(%d, %d); szWnd(%d, %d)", scale, rotate, pos.x, pos.y, szFrm.cx, szFrm.cy, szWnd.cx, szWnd.cy);
-	m_wndStatusBar.SetPaneText(1, str);
+	m_wndStatusBar.SetPaneText(2, str);
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -100,7 +100,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
 	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 120);
-	m_wndStatusBar.SetPaneStyle(1, SBPS_STRETCH | SBPS_NORMAL);
+	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 120);
+	m_wndStatusBar.SetPaneStyle(2, SBPS_STRETCH | SBPS_NORMAL);
 
 	// TODO: 如果不需要可停靠工具栏，则删除这三行
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
@@ -230,6 +231,10 @@ void CMainFrame::OnDrawFrame()
 	{
 		m_wndView.DrawFrame(f);
 	}
+
+	CString str;
+	str.Format("%.2f / %.2f", (float)f.tm_, (float)player_.getTimeTotal()/1000.0f);
+	m_wndStatusBar.SetPaneText(1, str);
 }
 
 void CMainFrame::OnUpdateFilePlay(CCmdUI *pCmdUI)
@@ -264,11 +269,11 @@ void CMainFrame::OnUpdateFilePause(CCmdUI *pCmdUI)
 void CMainFrame::OnSeekBackward()
 {
 	// TODO: 在此添加命令处理程序代码
-	player_.seek(-1000);
+	player_.seekTime(player_ .getTime()-2000);
 }
 
 void CMainFrame::OnSeekForward()
 {
 	// TODO: 在此添加命令处理程序代码
-	player_.seek(1000);
+	player_.seekTime(player_.getTime() + 2000);
 }
