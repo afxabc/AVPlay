@@ -164,23 +164,42 @@ void Player::decodeLoop()
 
 	paused_ = false;
 
-	timeBase_ = 0;
+	timeSeek_ = timeBase_ = 0;
 	timeDts_ = 10000;
 	timePts_ = 10000;
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
 	sigDecode_.off();
+
+	bool seek = false;
 	while (thDecode_.started())
 	{
 //		av_packet_unref(&packet);
-		if (av_read_frame(pFormatCtx_, &packet) < 0)
-			break;
-
+		int64_t dtm = abs(timeSeek_ - timeBase_);
+		if (dtm >= 500)
+		{
+			double seekTm = (double)timeSeek_ / (1000 * q2d);
+			if (timeSeek_ > timeBase_)
+				av_seek_frame(pFormatCtx_, videoindex_, seekTm, AVSEEK_FLAG_ANY);
+			else av_seek_frame(pFormatCtx_, videoindex_, seekTm, AVSEEK_FLAG_ANY|AVSEEK_FLAG_BACKWARD);
+			timeBase_ = timeSeek_;
+			seek = true;
+		}
+		
+		do
+		{
+			if (av_read_frame(pFormatCtx_, &packet) < 0)
+				break;
+		} while (seek && (packet.flags&AV_PKT_FLAG_KEY) == 0);
+		
+		seek = false;
 		if (packet.data == NULL || videoindex_ != packet.stream_index)
 		{
 			av_packet_unref(&packet);
 			continue;
 		}
+
+		timeSeek_ = timeBase_;
 
 		int got_picture = 0;
 		int ret = avcodec_decode_video2(pCodecCtx_, pFrame, &got_picture, &packet);

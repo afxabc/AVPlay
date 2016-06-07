@@ -75,6 +75,11 @@ public:
 		paused_ = paused;
 	}
 
+	void seek(int ms)
+	{
+		timeSeek_ = timeBase_+ms;
+	}
+
 	void onTimer();
 
 private:
@@ -88,6 +93,7 @@ private:
 	int videoindex_;
 
 	int64_t		timeBase_;
+	int64_t		timeSeek_;
 	int64_t		timeDts_;
 	int64_t		timePts_;
 	static const int TIMER = 10;

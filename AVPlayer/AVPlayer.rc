@@ -88,6 +88,9 @@ IDR_MAINFRAME TOOLBAR 16, 15
 BEGIN
     BUTTON      ID_FILE_PLAY
     BUTTON      ID_FILE_PAUSE
+    SEPARATOR
+    BUTTON      IDC_SEEK_BACKWARD
+    BUTTON      IDC_SEEK_FORWARD
 END
 
 
@@ -118,6 +121,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "旋转",                          IDC_ROTATE_ANGLE
         MENUITEM "原始尺寸",                        IDC_INIT_SIZE
+        MENUITEM SEPARATOR
+        MENUITEM "向前",                          IDC_SEEK_FORWARD
+        MENUITEM "向后",                          IDC_SEEK_BACKWARD
     END
     POPUP "显示"
     BEGIN

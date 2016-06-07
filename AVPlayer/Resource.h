@@ -13,6 +13,10 @@
 #define IDC_ROTATE_ANGLE                32778
 #define IDC_INIT_SIZE                   32782
 #define ID_FILE_PAUSE                   32790
+#define ID_32794                        32794
+#define IDC_SEEK_FORWARD                32795
+#define ID_32796                        32796
+#define IDC_SEEK_BACKWARD               32797
 #define IDC_SHOW_START                  35000
 #define IDC_SHOW_DIRECTDRAW             35001
 #define IDC_SHOW_D3DSURFACE             35002
@@ -25,7 +29,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        310
-#define _APS_NEXT_COMMAND_VALUE         32794
+#define _APS_NEXT_COMMAND_VALUE         32798
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           311
 #endif

@@ -25,9 +25,10 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(IDOK, &CMainFrame::OnDrawFrame)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PLAY, &CMainFrame::OnUpdateFilePlay)
 	ON_WM_CLOSE()
-	ON_WM_WINDOWPOSCHANGED()
 	ON_COMMAND(ID_FILE_PAUSE, &CMainFrame::OnFilePause)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PAUSE, &CMainFrame::OnUpdateFilePause)
+	ON_COMMAND(IDC_SEEK_BACKWARD, &CMainFrame::OnSeekBackward)
+	ON_COMMAND(IDC_SEEK_FORWARD, &CMainFrame::OnSeekForward)
 END_MESSAGE_MAP()
 
 #define ID_INDICATOR_PARAMS 1
@@ -245,14 +246,6 @@ void CMainFrame::OnClose()
 	CFrameWnd::OnClose();
 }
 
-
-void CMainFrame::OnWindowPosChanged(WINDOWPOS* lpwndpos)
-{
-	CFrameWnd::OnWindowPosChanged(lpwndpos);
-
-	// TODO: 在此处添加消息处理程序代码
-}
-
 void CMainFrame::OnFilePause()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -266,4 +259,16 @@ void CMainFrame::OnUpdateFilePause(CCmdUI *pCmdUI)
 	// TODO: 在此添加命令更新用户界面处理程序代码
 	pCmdUI->Enable(player_.isPlaying());
 	pCmdUI->SetCheck(player_.isPaused());
+}
+
+void CMainFrame::OnSeekBackward()
+{
+	// TODO: 在此添加命令处理程序代码
+	player_.seek(-1000);
+}
+
+void CMainFrame::OnSeekForward()
+{
+	// TODO: 在此添加命令处理程序代码
+	player_.seek(1000);
 }

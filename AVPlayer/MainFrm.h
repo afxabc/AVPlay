@@ -61,9 +61,10 @@ public:
 	afx_msg void OnDrawFrame();
 	afx_msg void OnUpdateFilePlay(CCmdUI *pCmdUI);
 	afx_msg void OnClose();
-	afx_msg void OnWindowPosChanged(WINDOWPOS* lpwndpos);
 	afx_msg void OnFilePause();
 	afx_msg void OnUpdateFilePause(CCmdUI *pCmdUI);
+	afx_msg void OnSeekBackward();
+	afx_msg void OnSeekForward();
 };
 
 
