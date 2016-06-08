@@ -29,6 +29,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PAUSE, &CMainFrame::OnUpdateFilePause)
 	ON_COMMAND(IDC_SEEK_BACKWARD, &CMainFrame::OnSeekBackward)
 	ON_COMMAND(IDC_SEEK_FORWARD, &CMainFrame::OnSeekForward)
+	ON_WM_HSCROLL()
+	ON_NOTIFY(NM_RELEASEDCAPTURE, ID_SEEK_BAR, &CMainFrame::OnNMReleasedcaptureSeekbar)
+	ON_NOTIFY(TRBN_THUMBPOSCHANGING, ID_SEEK_BAR, &CMainFrame::OnTRBNThumbPosChangingSeekbar)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -86,11 +89,21 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndView.setCallback(this);
 
-	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
+	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_BOTTOM | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("未能创建工具栏\n");
 		return -1;      // 未能创建
+	}
+
+	int index = m_wndToolBar.CommandToIndex(ID_SEEK_BAR);
+	if (index >= 0)
+	{
+		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, 200);
+		RECT rect;
+		m_wndToolBar.GetItemRect(index, &rect);
+		m_slider.Create(WS_VISIBLE, rect, &m_wndToolBar, ID_SEEK_BAR);
+		m_slider.SetRange(0, 100);
 	}
 
 	if (!m_wndStatusBar.Create(this))
@@ -207,8 +220,8 @@ void CMainFrame::OnFilePlay()
 	{
 		if (!checkFilePath())
 			OnFileOpen();
-		player_.startPlay(fipath_);
-
+		if (player_.startPlay(fipath_))
+			m_slider.SetRange(0, player_.getTimeTotal());
 		m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
 	}
 	else
@@ -232,8 +245,11 @@ void CMainFrame::OnDrawFrame()
 		m_wndView.DrawFrame(f);
 	}
 
+	if (GetCapture() != &m_slider)
+		m_slider.SetPos(f.tm_);
+
 	CString str;
-	str.Format("%.2f / %.2f", (float)f.tm_, (float)player_.getTimeTotal()/1000.0f);
+	str.Format("%.2f / %.2f", (float)f.tm_/1000.0f, (float)player_.getTimeTotal()/1000.0f);
 	m_wndStatusBar.SetPaneText(1, str);
 }
 
@@ -246,7 +262,7 @@ void CMainFrame::OnUpdateFilePlay(CCmdUI *pCmdUI)
 void CMainFrame::OnClose()
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	player_.stopPlay();
+	player_.stopPlay(true);
 	frms_.clear();
 	CFrameWnd::OnClose();
 }
@@ -276,4 +292,24 @@ void CMainFrame::OnSeekForward()
 {
 	// TODO: 在此添加命令处理程序代码
 	player_.seekTime(player_.getTime() + 2000);
+}
+
+
+void CMainFrame::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+
+	__super::OnHScroll(nSBCode, nPos, pScrollBar);
+}
+
+void CMainFrame::OnNMReleasedcaptureSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
+{
+	*pResult = 0;
+	int dts = m_slider.GetPos();
+	player_.seekTime(dts);
+}
+
+void CMainFrame::OnTRBNThumbPosChangingSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
+{
+	*pResult = 0;
 }

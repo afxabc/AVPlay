@@ -55,8 +55,12 @@ void AVPacketHold::take(AVPacket & packet)
 
 Player::Player()
 	: pFormatCtx_(NULL)
-	, pCodecCtx_(NULL)
-	, pCodec_(NULL)
+	, pVCodecCtx_(NULL)
+	, pVCodec_(NULL)
+	, pFrameYUV_(NULL)
+	, pFrameRGB_(NULL)
+	, swsContext_(NULL)
+	, q2d_(0.0)
 	, paused_(true)
 	, seeked_(true)
 	, timeTotal_(0)
@@ -68,14 +72,14 @@ Player::Player()
 
 Player::~Player()
 {
-	stopPlay();
+	stopPlay(true);
 	if (pFormatCtx_)
 		avformat_free_context(pFormatCtx_), pFormatCtx_ = NULL;
 }
 
 bool Player::startPlay(const char* finame)
 {
-	stopPlay();
+	stopPlay(true);
 
 	if (avformat_open_input(&pFormatCtx_, finame, NULL, NULL) != 0)
 	{
@@ -86,6 +90,7 @@ bool Player::startPlay(const char* finame)
 	if (avformat_find_stream_info(pFormatCtx_, NULL)<0)
 	{
 		LOGE("无法获取流信息！");
+		closeInput();
 		return false;
 	}
 	
@@ -100,32 +105,59 @@ bool Player::startPlay(const char* finame)
 	if (videoindex_ == -1)
 	{
 		LOGE("无法获取视频流！");
+		closeInput();
 		return false;
 	}
 
-	pCodecCtx_ = pFormatCtx_->streams[videoindex_]->codec;
-	pFormatCtx_->video_codec_id = pCodecCtx_->codec_id;
-	pFormatCtx_->video_codec = pCodec_ = avcodec_find_decoder(pCodecCtx_->codec_id);
-	if (pCodec_ == NULL)
+	pVCodecCtx_ = pFormatCtx_->streams[videoindex_]->codec;
+	pFormatCtx_->video_codec_id = pVCodecCtx_->codec_id;
+	pFormatCtx_->video_codec = pVCodec_ = avcodec_find_decoder(pVCodecCtx_->codec_id);
+	if (pVCodec_ == NULL)
 	{
-		LOGE("没有找到解码器: %X ！", pCodecCtx_->codec_id);
+		LOGE("没有找到解码器: %X ！", pVCodecCtx_->codec_id);
 		return false;
 	}
 
-	if (avcodec_open2(pCodecCtx_, pCodec_, NULL)<0)
+	if (avcodec_open2(pVCodecCtx_, pVCodec_, NULL)<0)
 	{
-		LOGE("无法打开解码器：%X ！", pCodecCtx_->codec_id);
+		LOGE("无法打开解码器：%X ！", pVCodecCtx_->codec_id);
 		return false;
 	}
 
-	double q2d = av_q2d(pFormatCtx_->streams[videoindex_]->time_base);
-	timeTotal_ = pFormatCtx_->duration * q2d * 1000;
+	q2d_ = av_q2d(pFormatCtx_->streams[videoindex_]->time_base);
+	timeTotal_ = pFormatCtx_->duration/1000;
 
-	return (thDecode_.start(boost::bind(&Player::decodeLoop, this, q2d))
-			&& thPlay_.start(boost::bind(&Player::playLoop, this)));
+	pFrameYUV_ = av_frame_alloc();
+	pFrameRGB_ = av_frame_alloc();
+
+	return (thDecode_.start(boost::bind(&Player::decodeLoop, this))
+		&& thPlay_.start(boost::bind(&Player::playLoop, this))
+		&& thSeek_.start(boost::bind(&Player::seekLoop, this))
+		);
 }
 
-void Player::stopPlay()
+void Player::closeInput()
+{
+	sigSeek_.on();
+	if (thSeek_.started())
+		thSeek_.stop();
+
+	if (swsContext_)
+		sws_freeContext(swsContext_), swsContext_ = NULL;
+
+	if (pFrameRGB_)
+		av_free(pFrameRGB_), pFrameRGB_ = NULL;
+
+	if (pFrameYUV_)
+		av_free(pFrameYUV_), pFrameYUV_ = NULL;
+
+	if (pVCodecCtx_)
+		avcodec_close(pVCodecCtx_), pVCodecCtx_ = NULL;
+
+	avformat_close_input(&pFormatCtx_);
+}
+
+void Player::stopPlay(bool close_input)
 {
 	sigDecode_.on();
 	if (thDecode_.started())
@@ -135,9 +167,8 @@ void Player::stopPlay()
 	if (thPlay_.started())
 		thPlay_.stop();
 
-	if (pCodecCtx_)
-		avcodec_close(pCodecCtx_),pCodecCtx_ = NULL;
-	avformat_close_input(&pFormatCtx_);
+	if (close_input)
+		closeInput();
 }
 
 static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
@@ -147,27 +178,124 @@ static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, D
 		pThis->onTimer();
 }
 
+int64_t Player::seekToFrm(int64_t ms, FrameData & frm)
+{
+	if (pVCodecCtx_ == NULL)
+		return -1;
+
+	seekTime(ms);
+
+	return int64_t();
+}
+
 void Player::onTimer()
 {
 	if (paused_)
 		return;
+
+	Lock lock(mutex_);
 
 	timeBase_ += TIMER;
 	sigDecode_.on();
 	sigPlay_.on();
 }
 
-void Player::decodeLoop(double q2d)
+int64_t Player::decodeVideo(AVPacket & packet)
+{
+	int64_t dts = -1;
+	if (packet.data == NULL || videoindex_ != packet.stream_index)
+	{
+		goto END;
+	}
+
+	int got_picture = 0;
+	int ret = avcodec_decode_video2(pVCodecCtx_, pFrameYUV_, &got_picture, &packet);
+	if (ret <= 0)
+	{
+		//	LOGW("================== ret=%d +++++++++++++++", ret);
+		goto END;
+	}
+
+	if (got_picture <= 0)
+	{
+		LOGW("*** got_picture=%d ***", got_picture);
+		goto END;
+	}
+
+	dts = packet.dts;
+
+END:
+	av_packet_unref(&packet);
+	return dts;
+}
+
+int64_t Player::createFrm(int64_t dts)
+{
+	if (dts < 0)
+		return dts;
+
+	FrameData frmOut;
+
+	timeDts_ = dts * q2d_ * 1000;
+
+	frmOut.width_ = pFrameYUV_->width;
+	frmOut.height_ = pFrameYUV_->height;
+	frmOut.size_ = frmOut.width_* frmOut.height_ * 4;
+	frmOut.data_ = new BYTE[frmOut.size_];
+	frmOut.tm_ = timeDts_;
+
+	if (swsContext_ == NULL)
+		swsContext_ = sws_getContext(frmOut.width_, frmOut.height_, pVCodecCtx_->pix_fmt, frmOut.width_, frmOut.height_, AV_PIX_FMT_BGRA, SWS_BICUBIC, NULL, NULL, NULL);
+
+	avpicture_fill((AVPicture *)pFrameRGB_, frmOut.data_, AV_PIX_FMT_BGRA, frmOut.width_, frmOut.height_);
+	sws_scale(swsContext_, pFrameYUV_->data, pFrameYUV_->linesize, 0, frmOut.height_, pFrameRGB_->data, pFrameRGB_->linesize);
+	
+	//queuePlay_.insert(frmOut, packet.pts * q2d * 1000);
+	//直接播放可以，按pts播放反而错乱？？
+	decodeFinish_(frmOut);
+
+	return dts;
+}
+
+void Player::seekFrm()
+{
+	if (!seeked_)
+		return;
+	seeked_ = false;
+
+	double seekTm = (double)timeSeek_ / (1000 * q2d_);
+	if (timeSeek_ > timeDts_)
+	{
+		av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
+		av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
+	}
+	else av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
+
+	Lock lock(mutex_);
+	AVPacket packet;
+	while (!seeked_)
+	{
+		if (av_read_frame(pFormatCtx_, &packet) < 0)
+			break;
+
+		int64_t dts = decodeVideo(packet);
+		if (dts * q2d_ * 1000 >= timeSeek_)
+		{
+			createFrm(dts);
+			break;
+		}
+	}
+	timeBase_ = timeSeek_;
+}
+
+void Player::decodeLoop()
 {
 	AVPacket packet;
 
-	AVFrame *pFrame = av_frame_alloc();
-	AVFrame *pFrameRGB = av_frame_alloc();
-	SwsContext *sContext = NULL;
-
-	timeSeek_ = timeBase_ = 0;
-	timeDts_ = 10000;
-	timePts_ = 10000;
+	timeSeek_ = 0;
+	timeBase_ = 0;
+	timeDts_ = 0;
+	timePts_ = 0;
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
 	sigDecode_.off();
@@ -176,113 +304,40 @@ void Player::decodeLoop(double q2d)
 	seeked_ = false;
 	while (thDecode_.started())
 	{
-//		av_packet_unref(&packet);
-		//int64_t dtm = abs(timeSeek_ - timeBase_);
-		if (seeked_)
 		{
-			if (timeSeek_ < 0)
-				timeSeek_ = 0;
+			Lock lock(mutex_);
 
-			if (timeSeek_ > timeTotal_)
-				timeSeek_ = timeTotal_;
+			if (av_read_frame(pFormatCtx_, &packet) < 0)
+				break;
 
-			double seekTm = (double)timeSeek_ / (1000 * q2d);
-			if (timeSeek_ > timeBase_)
-			{
-				av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
-			//	av_seek_frame(pFormatCtx_, videoindex_, seekTm-10, AVSEEK_FLAG_BACKWARD);
-			}
-			else av_seek_frame(pFormatCtx_, videoindex_, seekTm, AVSEEK_FLAG_BACKWARD);
-
-			while (thDecode_.started())
-			{
-				if (av_read_frame(pFormatCtx_, &packet) < 0)
-					break;
-
-				if (videoindex_ == packet.stream_index)
-				{
-					if ((packet.flags&AV_PKT_FLAG_KEY) != 0)
-					{
-						timeDts_ = packet.pts * q2d * 1000;
-						timeBase_ = timeDts_;
-						break;
-					}
-				}
-				else
-				{
-					av_packet_unref(&packet);
-					continue;
-				}
-			}
-
-			seeked_ = false;
+			int64_t dts = createFrm(decodeVideo(packet));
+			if (dts < 0)
+				continue;
 		}
-		else if (av_read_frame(pFormatCtx_, &packet) < 0)
-			break;
-
-
-		if (packet.data == NULL || videoindex_ != packet.stream_index)
-		{
-			av_packet_unref(&packet);
-			continue;
-		}
-
-		int got_picture = 0;
-		int ret = avcodec_decode_video2(pCodecCtx_, pFrame, &got_picture, &packet);
-		if (ret <= 0)
-		{
-		//	LOGW("================== ret=%d +++++++++++++++", ret);
-			av_packet_unref(&packet);
-			continue;
-		}
-
-		if (got_picture > 0)
-		{
-			FrameData pout;
-			pout.width_ = pFrame->width;
-			pout.height_ = pFrame->height;
-			pout.size_ = pout.width_* pout.height_ * 4;
-			pout.data_ = new BYTE[pout.size_];
-			pout.tm_ = packet.pts * q2d;
-
-			if (sContext == NULL)
-				sContext = sws_getContext(pout.width_, pout.height_, pCodecCtx_->pix_fmt, pout.width_, pout.height_, AV_PIX_FMT_BGRA, SWS_BICUBIC, NULL, NULL, NULL);
-
-			avpicture_fill((AVPicture *)pFrameRGB, pout.data_, AV_PIX_FMT_BGRA, pout.width_, pout.height_);
-			sws_scale(sContext, pFrame->data, pFrame->linesize, 0, pout.height_, pFrameRGB->data, pFrameRGB->linesize);
-
-//			queuePlay_.insert(pout, packet.pts * q2d * 1000);
-			//直接播放可以，按pts播放反而错乱？？
-			decodeFinish_(pout);
-
-			timeDts_ = packet.dts * q2d * 1000;
-			while (timeDts_ > timeBase_ && thDecode_.started())
-				sigDecode_.wait();
-
-		}
-		else
-		{
-			LOGW("*** got_picture=%d ***", got_picture);
-		}
-		av_packet_unref(&packet);
+	
+		while (timeDts_ > timeBase_ && thDecode_.started())
+			sigDecode_.wait();
 
 	}
 
-
 	av_packet_unref(&packet);
-	if (sContext != NULL)
-		sws_freeContext(sContext);
-
-	av_free(pFrameRGB);
-	av_free(pFrame);
 
 	while (queuePlay_.size() > 0)
 		Thread::sleep(100);
-
 	mRes = ::timeKillEvent(mRes);
 
-	stopPlay();
 	LOGW("+++++++++++++++ decodeLoop quit. +++++++++++++++");
+}
+
+void Player::seekLoop()
+{
+	sigSeek_.off();
+	while (thSeek_.started())
+	{
+		sigSeek_.wait(500);
+		seekFrm();
+	}
+	LOGW("################ seekLoop quit. ################");
 }
 
 void Player::playLoop()

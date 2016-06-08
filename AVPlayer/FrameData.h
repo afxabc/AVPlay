@@ -35,7 +35,7 @@ public:
 	mutable int height_;
 	mutable int size_;
 	mutable BYTE* data_;
-	mutable double tm_;
+	mutable int64_t tm_;
 };
 
 

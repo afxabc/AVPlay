@@ -42,6 +42,7 @@ public:
 
 protected:  // 控件条嵌入成员
 	CToolBar          m_wndToolBar;
+	CSliderCtrl		  m_slider;
 	CStatusBar        m_wndStatusBar;
 	CDrawWnd    m_wndView;
 	Player player_;
@@ -65,6 +66,9 @@ public:
 	afx_msg void OnUpdateFilePause(CCmdUI *pCmdUI);
 	afx_msg void OnSeekBackward();
 	afx_msg void OnSeekForward();
+	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnNMReleasedcaptureSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnTRBNThumbPosChangingSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
 };
 
 

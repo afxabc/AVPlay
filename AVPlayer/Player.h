@@ -53,7 +53,7 @@ public:
 
 public:
 	bool startPlay(const char* finame);
-	void stopPlay();
+	void stopPlay(bool close_input = false);
 
 	void setDecodeFinish(const FrameHandler& f)
 	{
@@ -75,10 +75,13 @@ public:
 		paused_ = paused;
 	}
 
+	int64_t seekToFrm(int64_t ms, FrameData& frmOut);
+
 	void seekTime(int64_t ms)
 	{
 		seeked_ = true;
-		timeSeek_ = ms;
+		timeSeek_ = (ms<0)?0:ms;
+		sigSeek_.on();
 	}
 
 	int64_t getTime()
@@ -94,13 +97,25 @@ public:
 	void onTimer();
 
 private:
-	void decodeLoop(double q2d);
+	void decodeLoop();
+	void seekLoop();
 	void playLoop();
+	int64_t decodeVideo(AVPacket& packet);
+	int64_t createFrm(int64_t dts);
+
+	void closeInput();
+
+	void seekFrm();
 
 private:
 	AVFormatContext *pFormatCtx_;
-	AVCodecContext  *pCodecCtx_;
-	AVCodec         *pCodec_;
+	AVCodecContext  *pVCodecCtx_;
+	AVCodec         *pVCodec_;
+	AVFrame			*pFrameYUV_;
+	AVFrame			*pFrameRGB_;
+	SwsContext		*swsContext_;
+	double  q2d_;
+
 	int videoindex_;
 
 	int64_t		timeTotal_;
@@ -108,14 +123,19 @@ private:
 	int64_t		timeSeek_;
 	int64_t		timeDts_;
 	int64_t		timePts_;
+
 	static const int TIMER = 10;
-	mutable Mutex mutexPts_;
+	mutable Mutex mutex_;
 	bool paused_;
 	bool seeked_;
 
 	Thread thDecode_;
 	Signal sigDecode_;
 
+	Thread thSeek_;
+	Signal sigSeek_;
+
+	mutable Mutex mutexPts_;
 	Thread thPlay_;
 	Signal sigPlay_;
 	TimeQueue<FrameData> queuePlay_;
