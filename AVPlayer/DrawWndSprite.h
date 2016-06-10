@@ -38,5 +38,7 @@ protected:
 	D3DXMATRIX matSprite_;
 	IDirect3DTexture9* pDirect3DTexture_;
 
+	CSize szWnd_;
+
 };
 

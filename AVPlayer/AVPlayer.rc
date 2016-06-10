@@ -70,7 +70,6 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\AVPlayer.ico"
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
@@ -78,13 +77,12 @@ IDR_MAINFRAME           ICON                    "res\\AVPlayer.ico"
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Toolbar
 //
 
-IDR_MAINFRAME TOOLBAR 16, 15
+IDR_MAINFRAME TOOLBAR 20, 20
 BEGIN
     BUTTON      ID_FILE_PLAY
     BUTTON      ID_FILE_PAUSE

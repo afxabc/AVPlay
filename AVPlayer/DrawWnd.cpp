@@ -26,6 +26,7 @@ CDrawWnd::CDrawWnd()
 	, HEIGHT_(601)
 	, rotation_(ROTATION_0)
 	, idHandle_(0)
+	, keyDown_(false)
 {
 }
 
@@ -88,6 +89,8 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DSPIRIT, &CDrawWnd::OnUpdateShowSpirit)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DVERTEX, &CDrawWnd::OnUpdateShowVertex)
 
+	ON_WM_KEYDOWN()
+	ON_WM_KEYUP()
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -99,7 +102,7 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	// TODO:  在此添加您专用的创建代码
 
-	OnDrawWndHandle(IDC_SHOW_DIRECTDRAW);
+	OnDrawWndHandle(IDC_SHOW_D3DSPIRIT);
 
 	return 0;
 }
@@ -184,7 +187,7 @@ void CDrawWnd::OnRotateAngle()
 void CDrawWnd::OnZoomIn()
 {
 	// TODO: 在此添加命令处理程序代码
-	int SPAN = (scale_<100) ? 5 : 10;
+	int SPAN = (scale_>=250) ? 50 :((scale_<100) ? 5 : 10);
 	scale_ += SPAN;
 	if (scale_ > 500)
 		scale_ = 500;
@@ -194,10 +197,10 @@ void CDrawWnd::OnZoomIn()
 void CDrawWnd::OnZoomOut()
 {
 	// TODO: 在此添加命令处理程序代码
-	int SPAN = (scale_<100) ? 5 : 10;
+	int SPAN = (scale_>250) ? 50 : ((scale_<100) ? 5 : 10);
 	scale_ -= SPAN;
-	if (scale_ < 5)
-		scale_ = 5;
+	if (scale_ < 10)
+		scale_ = 10;
 	UpdateCoordinate(TRUE);
 }
 
@@ -226,7 +229,9 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	CWnd::OnLButtonDblClk(nFlags, point);
-	OnInitSize();
+
+	scale_ = 100;
+	UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnDrawWndHandle(UINT which)
@@ -276,4 +281,28 @@ void CDrawWnd::OnUpdateShowSpirit(CCmdUI * pCmdUI)
 void CDrawWnd::OnUpdateShowVertex(CCmdUI * pCmdUI)
 {
 	pCmdUI->SetCheck(IDC_SHOW_D3DVERTEX == idHandle_);
+}
+
+void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (nChar == VK_SPACE && !keyDown_)
+	{
+		keyDown_ = true;
+		GetParent()->PostMessage(WM_COMMAND, ID_FILE_PAUSE);
+	}
+	else if (nChar == VK_RIGHT)
+		GetParent()->PostMessage(WM_COMMAND, IDC_SEEK_FORWARD);
+	else if (nChar == VK_LEFT)
+		GetParent()->PostMessage(WM_COMMAND, IDC_SEEK_BACKWARD);
+
+	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+void CDrawWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (nChar == ' ')
+		keyDown_ = false;
+	CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
 }

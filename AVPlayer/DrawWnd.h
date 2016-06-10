@@ -61,6 +61,7 @@ protected:
 	UINT idHandle_;
 
 	FrameData frmBak_;
+	bool keyDown_;
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -84,6 +85,9 @@ protected:
 	afx_msg void OnUpdateShowSurface(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateShowSpirit(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
+public:
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 

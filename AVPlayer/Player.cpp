@@ -159,6 +159,7 @@ void Player::closeInput()
 
 void Player::stopPlay(bool close_input)
 {
+	paused_ = false;
 	sigDecode_.on();
 	if (thDecode_.started())
 		thDecode_.stop();
@@ -178,14 +179,13 @@ static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, D
 		pThis->onTimer();
 }
 
-int64_t Player::seekToFrm(int64_t ms, FrameData & frm)
+void Player::tickForward()
 {
-	if (pVCodecCtx_ == NULL)
-		return -1;
+	paused_ = true;
+	Lock lock(mutex_);
 
-	seekTime(ms);
-
-	return int64_t();
+	timeBase_ = timeDts_+TIMER;
+	sigDecode_.on();
 }
 
 void Player::onTimer()
@@ -263,6 +263,7 @@ void Player::seekFrm()
 		return;
 	seeked_ = false;
 
+	Lock lock(mutex_);
 	double seekTm = (double)timeSeek_ / (1000 * q2d_);
 	if (timeSeek_ > timeDts_)
 	{
@@ -271,7 +272,6 @@ void Player::seekFrm()
 	}
 	else av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
 
-	Lock lock(mutex_);
 	AVPacket packet;
 	while (!seeked_)
 	{
@@ -308,10 +308,11 @@ void Player::decodeLoop()
 			Lock lock(mutex_);
 
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
-				break;
-
-			int64_t dts = createFrm(decodeVideo(packet));
-			if (dts < 0)
+			{
+				paused_ = true;
+				timeBase_ = timeDts_ - TIMER - TIMER;
+			}
+			else if (createFrm(decodeVideo(packet)) < 0)
 				continue;
 		}
 	
@@ -349,7 +350,7 @@ void Player::playLoop()
 	while (thPlay_.started())
 	{
 		while ((!queuePlay_.peerFront(timePts_) || timePts_ > timeBase_) && thPlay_.started())
-			sigPlay_.wait();
+			sigPlay_.wait(500);
 
 		if (queuePlay_.getFront(frm))
 		{

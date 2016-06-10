@@ -52,6 +52,7 @@ protected:  // 控件条嵌入成员
 // 生成的消息映射函数
 protected:
 	bool checkFilePath();
+	void resizeSlider();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSetFocus(CWnd *pOldWnd);
 	DECLARE_MESSAGE_MAP()
@@ -69,6 +70,9 @@ public:
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnNMReleasedcaptureSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnTRBNThumbPosChangingSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnUpdateSeekBackward(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateSeekForward(CCmdUI *pCmdUI);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
 

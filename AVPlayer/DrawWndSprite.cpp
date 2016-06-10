@@ -6,6 +6,7 @@ CDrawWndSprite::CDrawWndSprite()
 	, pDirect3DDevice_(NULL)
 	, pDirect3DSprite_(NULL)
 	, pDirect3DTexture_(NULL)
+	, szWnd_(0, 0)
 {
 }
 
@@ -69,28 +70,23 @@ void CDrawWndSprite::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT po
 	RECT r;
 	::GetClientRect(hwnd, &r);
 	CSize szWnd(r.right, r.bottom);
+	if (szWnd != szWnd_)
+	{
+		szWnd_ = szWnd;
+		Cleanup();
+		CreateDevice(hwnd);
+		DrawFrame(frm.data_, frm.width_, frm.height_);
+	}
 
-	float ratio_w = (float)szFrm.cx / (float)szWnd.cx;
-	float ratio_h = (float)szFrm.cy / (float)szWnd.cy;
-
-	float scale_x = scale*ratio_w;
-	float scale_y = scale*ratio_h;
-
-	float width = (float)szFrm.cx*scale_x;
-	float height = (float)szFrm.cy*scale_y;
-
-	D3DXVECTOR2 rotation_center(width / 2, height / 2);
-	D3DXVECTOR2 scale_center(szWnd.cx / 2 + pos.x, szWnd.cy / 2 + pos.y);
-
-	float x = (szWnd.cx - width) / 2;
-	float y = (szWnd.cy - height) / 2;
+	D3DXVECTOR2 center(szWnd.cx / 2 + pos.x, szWnd.cy / 2 + pos.y);
 
 	static const float angle[ROTATION_N] = { 0.0f, D3DX_PI*0.5f, D3DX_PI, D3DX_PI*1.5f };
 	D3DXMatrixTransformation2D(&matSprite_,
-		&scale_center, 0.0f,
-		&D3DXVECTOR2(scale_x, scale_y),
-		&rotation_center, angle[rotate],
-		&D3DXVECTOR2(pos.x, pos.y));
+		&center, 1.0f,
+		&D3DXVECTOR2(scale, scale),
+		&center, angle[rotate],
+		&D3DXVECTOR2(pos.x*scale, pos.y*scale));
+
 }
 
 void CDrawWndSprite::DrawFrame(const BYTE * pSrc, int width, int height)

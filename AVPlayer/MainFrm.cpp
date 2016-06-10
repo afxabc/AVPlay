@@ -32,6 +32,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_HSCROLL()
 	ON_NOTIFY(NM_RELEASEDCAPTURE, ID_SEEK_BAR, &CMainFrame::OnNMReleasedcaptureSeekbar)
 	ON_NOTIFY(TRBN_THUMBPOSCHANGING, ID_SEEK_BAR, &CMainFrame::OnTRBNThumbPosChangingSeekbar)
+	ON_UPDATE_COMMAND_UI(IDC_SEEK_BACKWARD, &CMainFrame::OnUpdateSeekBackward)
+	ON_UPDATE_COMMAND_UI(IDC_SEEK_FORWARD, &CMainFrame::OnUpdateSeekForward)
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -64,8 +67,17 @@ void CMainFrame::OnResetSize(int width, int height)
 	this->GetWindowRect(&rMain);
 	rMain.right += dWidth;
 	rMain.bottom += dHeight;
-	this->MoveWindow(&rMain);
-	this->CenterWindow();
+
+	int WIDTH = GetSystemMetrics(SM_CXSCREEN);
+	int HEIGHT = GetSystemMetrics(SM_CYSCREEN);
+
+	if (WIDTH > (rMain.right - rMain.left) && HEIGHT > (rMain.bottom - rMain.top))
+	{
+		this->MoveWindow(&rMain);
+		this->CenterWindow();
+	}
+	else this->ShowWindow(SW_MAXIMIZE);
+	
 }
 
 void CMainFrame::ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
@@ -96,15 +108,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 未能创建
 	}
 
-	int index = m_wndToolBar.CommandToIndex(ID_SEEK_BAR);
-	if (index >= 0)
-	{
-		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, 200);
-		RECT rect;
-		m_wndToolBar.GetItemRect(index, &rect);
-		m_slider.Create(WS_VISIBLE, rect, &m_wndToolBar, ID_SEEK_BAR);
-		m_slider.SetRange(0, 100);
-	}
+	m_slider.Create(WS_VISIBLE, CRect(0, 0, 10, 10), &m_wndToolBar, ID_SEEK_BAR);
+//	resizeSlider();
+	m_slider.SetRange(0, 100);
 
 	if (!m_wndStatusBar.Create(this))
 	{
@@ -193,9 +199,30 @@ void CMainFrame::print(Log::LEVEL level, const char * sformat)
 
 bool CMainFrame::checkFilePath()
 {
-	return false;
 	CFileFind ff;
 	return ff.FindFile(fipath_);
+}
+
+void CMainFrame::resizeSlider()
+{
+	int index = m_wndToolBar.CommandToIndex(ID_SEEK_BAR);
+	if (index >= 0)
+	{
+		RECT rectMain;
+		this->GetClientRect(&rectMain);
+
+		RECT rectBar;
+		m_wndToolBar.GetWindowRect(&rectBar);
+//		rectBar.right = rectBar.left + rectMain.right - 10;
+//		m_wndToolBar.MoveWindow(&rectBar);
+
+		RECT rect;
+		m_wndToolBar.GetItemRect(index, &rect);
+		rect.right = rectBar.right-5;
+		rect.top += 3;
+		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, 200);
+		m_slider.MoveWindow(&rect);
+	}
 }
 
 void CMainFrame::OnFileOpen()
@@ -209,8 +236,10 @@ void CMainFrame::OnFileOpen()
 		return;
 
 	fipath_ = fdlg.GetPathName();
-
 	this->SetWindowText(fdlg.GetFileTitle());
+	if (player_.startPlay(fipath_))
+		m_slider.SetRange(0, player_.getTimeTotal());
+	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
 }
 
 void CMainFrame::OnFilePlay()
@@ -220,9 +249,7 @@ void CMainFrame::OnFilePlay()
 	{
 		if (!checkFilePath())
 			OnFileOpen();
-		if (player_.startPlay(fipath_))
-			m_slider.SetRange(0, player_.getTimeTotal());
-		m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
+		else player_.startPlay(fipath_);
 	}
 	else
 	{
@@ -282,18 +309,30 @@ void CMainFrame::OnUpdateFilePause(CCmdUI *pCmdUI)
 	pCmdUI->SetCheck(player_.isPaused());
 }
 
+void CMainFrame::OnUpdateSeekBackward(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->Enable(player_.isPlaying());
+}
+
+void CMainFrame::OnUpdateSeekForward(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->Enable(player_.isPlaying());
+}
+
 void CMainFrame::OnSeekBackward()
 {
 	// TODO: 在此添加命令处理程序代码
-	player_.seekTime(player_ .getTime()-2000);
+	player_.seekTime(player_ .getTime()-100);
 }
 
 void CMainFrame::OnSeekForward()
 {
 	// TODO: 在此添加命令处理程序代码
-	player_.seekTime(player_.getTime() + 2000);
+	//player_.seekTime(player_.getTime() + 200);
+	player_.tickForward();
 }
-
 
 void CMainFrame::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
@@ -307,9 +346,20 @@ void CMainFrame::OnNMReleasedcaptureSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
 	*pResult = 0;
 	int dts = m_slider.GetPos();
 	player_.seekTime(dts);
+
+	m_wndView.SetFocus();
 }
 
 void CMainFrame::OnTRBNThumbPosChangingSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
 {
 	*pResult = 0;
+}
+
+
+void CMainFrame::OnSize(UINT nType, int cx, int cy)
+{
+	__super::OnSize(nType, cx, cy);
+
+	// TODO: 在此处添加消息处理程序代码
+	resizeSlider();
 }

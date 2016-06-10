@@ -75,7 +75,7 @@ public:
 		paused_ = paused;
 	}
 
-	int64_t seekToFrm(int64_t ms, FrameData& frmOut);
+	void tickForward();
 
 	void seekTime(int64_t ms)
 	{
