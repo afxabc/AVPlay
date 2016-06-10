@@ -7,6 +7,7 @@ CDrawWndSprite::CDrawWndSprite()
 	, pDirect3DSprite_(NULL)
 	, pDirect3DTexture_(NULL)
 	, szWnd_(0, 0)
+	, pos_(0, 0, 0)
 {
 }
 
@@ -45,6 +46,7 @@ BOOL CDrawWndSprite::CreateDevice(HWND hwnd)
 	ZeroMemory(&d3dpp_, sizeof(d3dpp_));
 	d3dpp_.Windowed = TRUE;
 	d3dpp_.BackBufferCount = 1;
+	d3dpp_.hDeviceWindow = hwnd;
 	d3dpp_.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	d3dpp_.BackBufferFormat = D3DFMT_UNKNOWN;
 
@@ -78,14 +80,34 @@ void CDrawWndSprite::UpdateCoordinate(float scale, ROTATIONTYPE rotate, POINT po
 		DrawFrame(frm.data_, frm.width_, frm.height_);
 	}
 
-	D3DXVECTOR2 center(szWnd.cx / 2 + pos.x, szWnd.cy / 2 + pos.y);
+	D3DXVECTOR2 center(frm.width_ / 2, frm.height_ / 2);
+
+	switch (rotate)
+	{
+	case ROTATION_0:
+		pos_.x = pos.x / scale + (szWnd.cx-frm.width_)/(2*scale);
+		pos_.y = pos.y / scale + (szWnd.cy-frm.height_)/(2*scale);
+		break;
+	case ROTATION_90:
+		pos_.x = pos.y / scale + (szWnd.cy-frm.height_)/(2*scale);
+		pos_.y = -pos.x / scale - (szWnd.cx-frm.width_)/(2*scale);
+		break;
+	case ROTATION_180:
+		pos_.x = -pos.x / scale - (szWnd.cx-frm.width_)/(2*scale);
+		pos_.y = -pos.y / scale - (szWnd.cy-frm.height_)/(2*scale);
+		break;
+	case ROTATION_270:
+		pos_.x = -pos.y / scale - (szWnd.cy-frm.height_)/(2*scale);
+		pos_.y = pos.x / scale + (szWnd.cx-frm.width_)/(2*scale);
+		break;
+	}
 
 	static const float angle[ROTATION_N] = { 0.0f, D3DX_PI*0.5f, D3DX_PI, D3DX_PI*1.5f };
 	D3DXMatrixTransformation2D(&matSprite_,
 		&center, 1.0f,
 		&D3DXVECTOR2(scale, scale),
 		&center, angle[rotate],
-		&D3DXVECTOR2(pos.x*scale, pos.y*scale));
+		NULL);
 
 }
 
@@ -160,7 +182,7 @@ void CDrawWndSprite::Render()
 	{
 		pDirect3DSprite_->Begin(D3DXSPRITE_ALPHABLEND);
 		pDirect3DSprite_->SetTransform(&matSprite_);
-		pDirect3DSprite_->Draw(pDirect3DTexture_, NULL, NULL, NULL, 0xFFFFFFFF);
+		pDirect3DSprite_->Draw(pDirect3DTexture_, NULL, NULL, &pos_, 0xFFFFFFFF);
 		pDirect3DSprite_->End();
 	}
 

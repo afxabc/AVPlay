@@ -39,6 +39,7 @@ protected:
 	IDirect3DTexture9* pDirect3DTexture_;
 
 	CSize szWnd_;
+	D3DXVECTOR3 pos_;
 
 };
 

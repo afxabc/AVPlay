@@ -101,17 +101,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndView.setCallback(this);
 
-	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_BOTTOM | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
-		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
-	{
-		TRACE0("未能创建工具栏\n");
-		return -1;      // 未能创建
-	}
-
-	m_slider.Create(WS_VISIBLE, CRect(0, 0, 10, 10), &m_wndToolBar, ID_SEEK_BAR);
-//	resizeSlider();
-	m_slider.SetRange(0, 100);
-
 	if (!m_wndStatusBar.Create(this))
 	{
 		TRACE0("未能创建状态栏\n");
@@ -122,10 +111,21 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 120);
 	m_wndStatusBar.SetPaneStyle(2, SBPS_STRETCH | SBPS_NORMAL);
 
+	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_BOTTOM | CBRS_GRIPPER | CBRS_TOOLTIPS) ||
+		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
+	{
+		TRACE0("未能创建工具栏\n");
+		return -1;      // 未能创建
+	}
+
+	m_slider.Create(WS_VISIBLE, CRect(0, 0, 10, 10), &m_wndToolBar, ID_SEEK_BAR);
+//	resizeSlider();
+	m_slider.SetRange(0, 100);
+
 	// TODO: 如果不需要可停靠工具栏，则删除这三行
-	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
-	EnableDocking(CBRS_ALIGN_ANY);
-	DockControlBar(&m_wndToolBar);
+//	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
+//	EnableDocking(CBRS_ALIGN_ANY);
+//	DockControlBar(&m_wndToolBar);
 
 
 	LOGPRINT(&CMainFrame::print, this);
@@ -220,7 +220,7 @@ void CMainFrame::resizeSlider()
 		m_wndToolBar.GetItemRect(index, &rect);
 		rect.right = rectBar.right-5;
 		rect.top += 3;
-		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, 200);
+		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, rect.right-rect.left);
 		m_slider.MoveWindow(&rect);
 	}
 }
@@ -228,9 +228,6 @@ void CMainFrame::resizeSlider()
 void CMainFrame::OnFileOpen()
 {
 	// TODO: 在此添加命令处理程序代码
-	if (player_.isPlaying())
-		return;
-
 	CFileDialog fdlg(TRUE);
 	if (fdlg.DoModal() != IDOK)
 		return;

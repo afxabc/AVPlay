@@ -66,6 +66,11 @@ void CDrawWnd::ResetDrawWndHandle()
 	UpdateCoordinate(TRUE);
 }
 
+bool CDrawWnd::checkForEdge()
+{
+	return false;
+}
+
 //////////////////////////////////////////////////////////////////
 
 BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
@@ -230,6 +235,8 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	CWnd::OnLButtonDblClk(nFlags, point);
 
+	xPos_ = 0;
+	yPos_ = 0;
 	scale_ = 100;
 	UpdateCoordinate(TRUE);
 }
