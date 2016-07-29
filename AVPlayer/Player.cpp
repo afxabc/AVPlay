@@ -51,10 +51,17 @@ void AVPacketHold::take(AVPacket & packet)
 	av_packet_unref(&packet);
 }
 
+
+#define MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio 
 //////////////////////////////////////////////////////////////////////////
 
 Player::Player()
 	: pFormatCtx_(NULL)
+	, pACodecCtx_(NULL)
+	, pACodec_(NULL)
+	, swrContext_(NULL)
+	, pFrameAudio_(NULL)
+	, pcmBuffer_(NULL)
 	, pVCodecCtx_(NULL)
 	, pVCodec_(NULL)
 	, pFrameYUV_(NULL)
@@ -93,14 +100,19 @@ bool Player::startPlay(const char* finame)
 		closeInput();
 		return false;
 	}
-	
+
 	videoindex_ = -1;
-	for (int i = 0; i<pFormatCtx_->nb_streams; i++)
-		if (pFormatCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
-		{
+	audioindex_ = -1;
+	for (int i = 0; i < pFormatCtx_->nb_streams; i++)
+	{
+		if (pFormatCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && videoindex_ < 0)
 			videoindex_ = i;
+		else if (pFormatCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && audioindex_ < 0)
+			audioindex_ = i;
+
+		if (videoindex_ > 0 && audioindex_ > 0)
 			break;
-		}
+	}
 
 	if (videoindex_ == -1)
 	{
@@ -114,13 +126,13 @@ bool Player::startPlay(const char* finame)
 	pFormatCtx_->video_codec = pVCodec_ = avcodec_find_decoder(pVCodecCtx_->codec_id);
 	if (pVCodec_ == NULL)
 	{
-		LOGE("没有找到解码器: %X ！", pVCodecCtx_->codec_id);
+		LOGE("没有找到视频解码器: %X ！", pVCodecCtx_->codec_id);
 		return false;
 	}
 
 	if (avcodec_open2(pVCodecCtx_, pVCodec_, NULL)<0)
 	{
-		LOGE("无法打开解码器：%X ！", pVCodecCtx_->codec_id);
+		LOGE("无法打开视频解码器：%X ！", pVCodecCtx_->codec_id);
 		return false;
 	}
 
@@ -129,6 +141,26 @@ bool Player::startPlay(const char* finame)
 
 	pFrameYUV_ = av_frame_alloc();
 	pFrameRGB_ = av_frame_alloc();
+
+	if (audioindex_ >= 0)
+	{
+		pACodecCtx_ = pFormatCtx_->streams[audioindex_]->codec;
+		pFormatCtx_->audio_codec_id = pACodecCtx_->codec_id;
+		pFormatCtx_->audio_codec = pACodec_ = avcodec_find_decoder(pACodecCtx_->codec_id);
+		if (pACodec_ != NULL)
+		{
+			if (avcodec_open2(pACodecCtx_, pACodec_, NULL) >= 0)
+			{
+				pFrameAudio_ = av_frame_alloc();
+				pcmBuffer_ = new char[MAX_AUDIO_FRAME_SIZE*2];
+			}
+			else LOGW("无法打开音频解码器：%X ！", pACodecCtx_->codec_id);
+		}
+		else
+		{
+			LOGW("没有找到音频解码器: %X ！", pACodecCtx_->codec_id);
+		}
+	}
 
 	return (thDecode_.start(boost::bind(&Player::decodeLoop, this))
 		&& thPlay_.start(boost::bind(&Player::playLoop, this))
@@ -153,6 +185,20 @@ void Player::closeInput()
 
 	if (pVCodecCtx_)
 		avcodec_close(pVCodecCtx_), pVCodecCtx_ = NULL;
+
+	if (pFrameAudio_)
+		av_free(pFrameAudio_), pFrameAudio_ = NULL;
+
+	if (pcmBuffer_)
+		delete[] pcmBuffer_, pcmBuffer_ = NULL;
+
+	if (pACodecCtx_)
+		avcodec_close(pACodecCtx_), pACodecCtx_ = NULL;
+
+	if (swrContext_)
+		swr_free(&swrContext_), swrContext_ = NULL;
+
+	aPlay_.stop();
 
 	avformat_close_input(&pFormatCtx_);
 }
@@ -288,6 +334,65 @@ void Player::seekFrm()
 	timeBase_ = timeSeek_;
 }
 
+void Player::decodeAudio(AVPacket & packet)
+{
+	if (packet.data == NULL || audioindex_ != packet.stream_index)
+	{
+		av_packet_unref(&packet);
+		return;
+	}
+
+	int got_picture = 0;
+	int sz = 0;
+	int out_channels = 0;
+	while ((sz = avcodec_decode_audio4(pACodecCtx_, pFrameAudio_, &got_picture, &packet)) > 0)
+	{
+		if (got_picture <= 0)
+		{
+			LOGW("*** got_picture=%d ***", got_picture);
+			break;
+		}
+
+		/////////////////////////////////////////
+
+		if (swrContext_ == NULL)
+		{
+			int64_t in_channel_layout = av_get_default_channel_layout(pACodecCtx_->channels);
+			// Out Audio Param
+			uint64_t out_channel_layout = in_channel_layout;
+			//AAC:1024  MP3:1152  
+			int out_nb_samples = pACodecCtx_->frame_size;
+			AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
+			int out_sample_rate = pFrameAudio_->sample_rate;//44100;
+			out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
+			//Out Buffer Size  
+			int out_buffer_size = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
+
+			pcmBufferSize_ = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
+
+			swrContext_ = swr_alloc();
+			swrContext_ = swr_alloc_set_opts(swrContext_, out_channel_layout, out_sample_fmt, out_sample_rate,
+				in_channel_layout, pACodecCtx_->sample_fmt, pACodecCtx_->sample_rate, 0, NULL);
+			swr_init(swrContext_);
+
+			aPlay_.start(out_sample_rate, out_channels, 16);
+		}
+
+		int nb = swr_convert(swrContext_, (unsigned char**)&pcmBuffer_, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)pFrameAudio_->data, pFrameAudio_->nb_samples);
+		if (nb > 0)
+			aPlay_.inputPcm(pcmBuffer_, pcmBufferSize_);
+
+		////////////////////////////////////////
+
+		packet.data += sz;
+		packet.size -= sz;
+		if (packet.size <= 0)
+			break;
+	}
+
+	av_packet_unref(&packet);
+}
+
 void Player::decodeLoop()
 {
 	AVPacket packet;
@@ -312,8 +417,16 @@ void Player::decodeLoop()
 				paused_ = true;
 				timeBase_ = timeDts_ - TIMER - TIMER;
 			}
-			else if (createFrm(decodeVideo(packet)) < 0)
-				continue;
+			else if (videoindex_ == packet.stream_index)
+			{
+				if (createFrm(decodeVideo(packet)) < 0)
+					continue;
+			}
+			else if (audioindex_ == packet.stream_index)
+			{
+				decodeAudio(packet);
+			}
+				
 		}
 	
 		while (timeDts_ > timeBase_ && thDecode_.started())

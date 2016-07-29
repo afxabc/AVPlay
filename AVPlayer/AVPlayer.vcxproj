@@ -98,7 +98,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>F:\SDK\ffmpeg\lib;F:\SDK\DirectX\Lib\x86;F:\Codes\eko\debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>base.lib;Secur32.lib;Vfw32.lib;libswscale.a;libavcodec.a;libavutil.a;libavformat.a;libswresample.a;winmm.lib;Ddraw.lib;d3dx9.lib;d3d9.lib;nafxcwd.lib;Libcmtd.lib</AdditionalDependencies>
+      <AdditionalDependencies>base.lib;Secur32.lib;Vfw32.lib;libx264.a;libswscale.a;libavcodec.a;libavutil.a;libavformat.a;libswresample.a;winmm.lib;Ddraw.lib;d3dx9.lib;d3d9.lib;nafxcwd.lib;Libcmtd.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>nafxcwd.lib;Libcmtd.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Midl>
@@ -190,6 +190,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AudioPlay.h" />
     <ClInclude Include="AVPlayer.h" />
     <ClInclude Include="DrawWnd.h" />
     <ClInclude Include="DrawWndDDraw.h" />
@@ -206,6 +207,7 @@
     <ClInclude Include="timequeue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AudioPlay.cpp" />
     <ClCompile Include="AVPlayer.cpp" />
     <ClCompile Include="DrawWnd.cpp" />
     <ClCompile Include="DrawWndDDraw.cpp" />

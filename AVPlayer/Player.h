@@ -2,6 +2,7 @@
 
 #include "FrameData.h"
 #include "timequeue.h"
+#include "AudioPlay.h"
 
 #include "base\thread.h"
 #include "base\queue.h"
@@ -11,6 +12,7 @@ extern "C"
 #include "libavcodec\avcodec.h"
 #include "libavformat\avformat.h"
 #include "libswscale\swscale.h"
+#include "libswresample\swresample.h"
 };
 
 class AVPacketHold
@@ -100,6 +102,7 @@ private:
 	void decodeLoop();
 	void seekLoop();
 	void playLoop();
+	void decodeAudio(AVPacket& packet);
 	int64_t decodeVideo(AVPacket& packet);
 	int64_t createFrm(int64_t dts);
 
@@ -109,14 +112,23 @@ private:
 
 private:
 	AVFormatContext *pFormatCtx_;
+
+	int audioindex_;
+	AVCodecContext  *pACodecCtx_;
+	AVCodec         *pACodec_;
+	AVFrame			*pFrameAudio_; 
+	char			*pcmBuffer_;
+	int				pcmBufferSize_;
+	SwrContext		*swrContext_;
+	AudioPlay  aPlay_;
+
+	int videoindex_;
 	AVCodecContext  *pVCodecCtx_;
 	AVCodec         *pVCodec_;
 	AVFrame			*pFrameYUV_;
 	AVFrame			*pFrameRGB_;
 	SwsContext		*swsContext_;
 	double  q2d_;
-
-	int videoindex_;
 
 	int64_t		timeTotal_;
 	int64_t		timeBase_;
