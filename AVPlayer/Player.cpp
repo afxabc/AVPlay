@@ -383,7 +383,7 @@ void Player::decodeAudio(AVPacket & packet)
 		{
 			FrameData frmOut;
 
-			timeDtsA_ = packet.dts*q2d_ * 1000/2;
+			timeDtsA_ = packet.dts*av_q2d(pFormatCtx_->streams[audioindex_]->time_base) * 1000;
 
 			frmOut.type_ = FRAME_AUDIO;
 			frmOut.tm_ = timeDtsA_;
