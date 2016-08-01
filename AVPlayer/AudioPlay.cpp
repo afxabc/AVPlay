@@ -129,9 +129,21 @@ void AudioPlay::inputPcm(const char * data, int len)
 	Buffer tmp;
 	BYTE* buf = (BYTE*)recvBuff_.beginRead();
 	tmp.pushBack((char*)buf, matchSize);
+
+	if (playQueue_.size() > 10)
+	{
+		TRACE("Tooooooooo much in queue !!!!!\n");
+		playQueue_.clear();
+	}
 	playQueue_.putBack(tmp);
 
 	recvBuff_.eraseFront(matchSize);
+}
+
+void AudioPlay::reset()
+{
+	playQueue_.clear();
+	recvBuff_.erase();
 }
 
 void AudioPlay::loop()

@@ -19,6 +19,7 @@ public:
 	bool start(UINT samplesPerSec, UINT channels, unsigned char bitsPerSample, int ptime = 40);
 	void stop();
 	void inputPcm(const char* data, int len);
+	void reset();
 
 	bool isStart() { return started_; }
 	void setMute(bool mute = true) { mute_ = mute; }

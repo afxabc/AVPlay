@@ -133,7 +133,8 @@ private:
 	int64_t		timeTotal_;
 	int64_t		timeBase_;
 	int64_t		timeSeek_;
-	int64_t		timeDts_;
+	int64_t		timeDtsV_;
+	int64_t		timeDtsA_;
 	int64_t		timePts_;
 
 	static const int TIMER = 10;

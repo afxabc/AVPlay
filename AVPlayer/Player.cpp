@@ -216,6 +216,7 @@ void Player::stopPlay(bool close_input)
 
 	if (close_input)
 		closeInput();
+
 }
 
 static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
@@ -230,7 +231,7 @@ void Player::tickForward()
 	paused_ = true;
 	Lock lock(mutex_);
 
-	timeBase_ = timeDts_+TIMER;
+	timeBase_ = timeDtsV_+TIMER;
 	sigDecode_.on();
 }
 
@@ -282,13 +283,14 @@ int64_t Player::createFrm(int64_t dts)
 
 	FrameData frmOut;
 
-	timeDts_ = dts * q2d_ * 1000;
+	timeDtsV_ = dts * q2d_ * 1000;
 
+	frmOut.type_ = FRAME_VIDEO;
 	frmOut.width_ = pFrameYUV_->width;
 	frmOut.height_ = pFrameYUV_->height;
 	frmOut.size_ = frmOut.width_* frmOut.height_ * 4;
 	frmOut.data_ = new BYTE[frmOut.size_];
-	frmOut.tm_ = timeDts_;
+	frmOut.tm_ = timeDtsV_;
 
 	if (swsContext_ == NULL)
 		swsContext_ = sws_getContext(frmOut.width_, frmOut.height_, pVCodecCtx_->pix_fmt, frmOut.width_, frmOut.height_, AV_PIX_FMT_BGRA, SWS_BICUBIC, NULL, NULL, NULL);
@@ -297,8 +299,9 @@ int64_t Player::createFrm(int64_t dts)
 	sws_scale(swsContext_, pFrameYUV_->data, pFrameYUV_->linesize, 0, frmOut.height_, pFrameRGB_->data, pFrameRGB_->linesize);
 	
 	//queuePlay_.insert(frmOut, packet.pts * q2d * 1000);
+	queuePlay_.insert(frmOut, timeDtsV_);
 	//直接播放可以，按pts播放反而错乱？？
-	decodeFinish_(frmOut);
+	//decodeFinish_(frmOut);
 
 	return dts;
 }
@@ -311,7 +314,7 @@ void Player::seekFrm()
 
 	Lock lock(mutex_);
 	double seekTm = (double)timeSeek_ / (1000 * q2d_);
-	if (timeSeek_ > timeDts_)
+	if (timeSeek_ > timeDtsV_)
 	{
 		av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
 		av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
@@ -332,6 +335,8 @@ void Player::seekFrm()
 		}
 	}
 	timeBase_ = timeSeek_;
+	queuePlay_.clear();
+	aPlay_.reset();
 }
 
 void Player::decodeAudio(AVPacket & packet)
@@ -344,7 +349,6 @@ void Player::decodeAudio(AVPacket & packet)
 
 	int got_picture = 0;
 	int sz = 0;
-	int out_channels = 0;
 	while ((sz = avcodec_decode_audio4(pACodecCtx_, pFrameAudio_, &got_picture, &packet)) > 0)
 	{
 		if (got_picture <= 0)
@@ -357,20 +361,16 @@ void Player::decodeAudio(AVPacket & packet)
 
 		if (swrContext_ == NULL)
 		{
-			int64_t in_channel_layout = av_get_default_channel_layout(pACodecCtx_->channels);
-			// Out Audio Param
-			uint64_t out_channel_layout = in_channel_layout;
-			//AAC:1024  MP3:1152  
-			int out_nb_samples = pACodecCtx_->frame_size;
+			uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
 			AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
-			int out_sample_rate = pFrameAudio_->sample_rate;//44100;
-			out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
-			//Out Buffer Size  
-			int out_buffer_size = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
+			int out_nb_samples = 1024;
+			int out_sample_rate = 44100;
+			int out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
 
 			pcmBufferSize_ = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
 
 			swrContext_ = swr_alloc();
+			int64_t in_channel_layout = av_get_default_channel_layout(pACodecCtx_->channels);
 			swrContext_ = swr_alloc_set_opts(swrContext_, out_channel_layout, out_sample_fmt, out_sample_rate,
 				in_channel_layout, pACodecCtx_->sample_fmt, pACodecCtx_->sample_rate, 0, NULL);
 			swr_init(swrContext_);
@@ -380,7 +380,20 @@ void Player::decodeAudio(AVPacket & packet)
 
 		int nb = swr_convert(swrContext_, (unsigned char**)&pcmBuffer_, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)pFrameAudio_->data, pFrameAudio_->nb_samples);
 		if (nb > 0)
-			aPlay_.inputPcm(pcmBuffer_, pcmBufferSize_);
+		{
+			FrameData frmOut;
+
+			timeDtsA_ = packet.dts*q2d_ * 1000/2;
+
+			frmOut.type_ = FRAME_AUDIO;
+			frmOut.tm_ = timeDtsA_;
+			frmOut.size_ = nb * 2 * 2;
+			frmOut.data_ = new BYTE[frmOut.size_];
+			memcpy(frmOut.data_, pcmBuffer_, frmOut.size_);
+
+			queuePlay_.insert(frmOut, timeDtsA_);
+		//	aPlay_.inputPcm(pcmBuffer_, nb*2*2);
+		}
 
 		////////////////////////////////////////
 
@@ -399,7 +412,8 @@ void Player::decodeLoop()
 
 	timeSeek_ = 0;
 	timeBase_ = 0;
-	timeDts_ = 0;
+	timeDtsV_ = 0;
+	timeDtsA_ = 0;
 	timePts_ = 0;
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
@@ -415,7 +429,7 @@ void Player::decodeLoop()
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
 			{
 				paused_ = true;
-				timeBase_ = timeDts_ - TIMER - TIMER;
+				timeBase_ = timeDtsV_ - TIMER - TIMER;
 			}
 			else if (videoindex_ == packet.stream_index)
 			{
@@ -429,7 +443,8 @@ void Player::decodeLoop()
 				
 		}
 	
-		while (timeDts_ > timeBase_ && thDecode_.started())
+	//	while (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_ && thDecode_.started())
+		while (queuePlay_.size() > 10 && thDecode_.started())
 			sigDecode_.wait();
 
 	}
@@ -467,10 +482,10 @@ void Player::playLoop()
 
 		if (queuePlay_.getFront(frm))
 		{
-
-			LOGW("%d === %lf === %d", (int)timeBase_, frm.tm_, (int)timePts_);
-			if (decodeFinish_)
+			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)timePts_, frm.size_);
+			if (frm.type_ == FRAME_VIDEO)
 				decodeFinish_(frm);
+			else aPlay_.inputPcm((char*)frm.data_, frm.size_);
 		}
 
 	}

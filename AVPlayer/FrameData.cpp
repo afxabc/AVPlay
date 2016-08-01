@@ -1,7 +1,8 @@
 #include "FrameData.h"
 
 FrameData::FrameData()
-	: width_(0)
+	: type_(FRAME_VIDEO)
+	, width_(0)
 	, height_(0)
 	, size_(0)
 	, data_(NULL)
@@ -9,8 +10,9 @@ FrameData::FrameData()
 {
 }
 
-FrameData::FrameData(AVCodecID codec, AVPixelFormat format, int width, int height, int size, const BYTE * data)
-	: width_(width)
+FrameData::FrameData(FrameType type, int width, int height, int size, const BYTE * data)
+	: type_(type)
+	, width_(width)
 	, height_(height)
 	, size_(0)
 	, data_(NULL)
@@ -38,6 +40,7 @@ FrameData::~FrameData()
 
 void FrameData::take(const FrameData & p)
 {
+	type_ = p.type_;
 	width_ = p.width_;
 	height_ = p.height_;
 	size_ = p.size_;

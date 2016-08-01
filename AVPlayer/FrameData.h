@@ -10,11 +10,17 @@ extern "C"
 
 static const AVPixelFormat GDI_FORMAT = AV_PIX_FMT_BGRA;
 
+enum FrameType
+{
+	FRAME_VIDEO, 			
+	FRAME_AUDIO,
+};
+
 class FrameData
 {
 public:
 	FrameData();
-	FrameData(AVCodecID codec, AVPixelFormat format, int width, int height, int size, const BYTE* data);
+	FrameData(FrameType type, int width, int height, int size, const BYTE* data);
 	FrameData(const FrameData& p);
 
 	~FrameData();
@@ -31,6 +37,7 @@ private:
 	void take(const FrameData& p);
 
 public:
+	mutable FrameType type_;
 	mutable int width_;
 	mutable int height_;
 	mutable int size_;
