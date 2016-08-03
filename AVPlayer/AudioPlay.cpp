@@ -10,6 +10,13 @@ AudioPlay::AudioPlay()
 	, ptime_(40)
 {
 	HRESULT hr = DirectSoundCreate8(NULL, &lpDSound_, NULL);
+
+	vol_ = VOL_RANG / 2;
+	double k = (DSBVOLUME_MAX - DSBVOLUME_MIN) / log10((double)VOL_RANG);
+	for (int i = 0; i < VOL_RANG; i++)
+	{
+		volTable[i] = k * log10((double)(i+1) / VOL_RANG);
+	}
 }
 
 
@@ -146,6 +153,28 @@ void AudioPlay::reset()
 	recvBuff_.erase();
 }
 
+DWORD AudioPlay::setVolume(DWORD vol)
+{
+	if (!started_ || pDSB8_ == NULL)
+		return vol_;
+
+	vol_ = vol;
+
+	if (vol_ < 0)
+		vol_ = 0;
+	if (vol_ >= VOL_RANG)
+		vol_ = VOL_RANG-1;
+
+	pDSB8_->SetVolume(volTable[vol_]);
+
+	return vol_;
+}
+
+DWORD AudioPlay::getVolume()
+{
+	return vol_;
+}
+
 void AudioPlay::loop()
 {
 	//ÉèÖÃÌáÐÑ
@@ -178,7 +207,10 @@ void AudioPlay::loop()
 	}
 
 	pDSB8_->SetCurrentPosition(0);
+
 	HRESULT hr = pDSB8_->Play(0, 0, DSBPLAY_LOOPING);
+	Sleep(ptime_);
+	pDSB8_->SetVolume(volTable[vol_]);
 
 	started_ = true;
 	while (started_)

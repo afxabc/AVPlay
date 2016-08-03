@@ -443,6 +443,7 @@ void Player::decodeLoop()
 				
 		}
 	
+		av_packet_unref(&packet);
 	//	while (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_ && thDecode_.started())
 		while (queuePlay_.size() > 10 && thDecode_.started())
 			sigDecode_.wait();
@@ -482,7 +483,7 @@ void Player::playLoop()
 
 		if (queuePlay_.getFront(frm))
 		{
-			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)timePts_, frm.size_);
+//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)timePts_, frm.size_);
 			if (frm.type_ == FRAME_VIDEO)
 				decodeFinish_(frm);
 			else aPlay_.inputPcm((char*)frm.data_, frm.size_);

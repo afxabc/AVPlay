@@ -70,12 +70,14 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\AVPlayer.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -89,6 +91,11 @@ BEGIN
     SEPARATOR
     BUTTON      IDC_SEEK_BACKWARD
     BUTTON      IDC_SEEK_FORWARD
+    SEPARATOR
+    BUTTON      ID_VOLUME_BAR
+    SEPARATOR
+    BUTTON      ID_VOLUME_DOWN
+    BUTTON      ID_VOLUME_UP
     SEPARATOR
     BUTTON      ID_SEEK_BAR
 END
@@ -109,24 +116,29 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "退出(&X)",                      ID_APP_EXIT
     END
+    POPUP "操作"
+    BEGIN
+        MENUITEM "向前一帧",                        IDC_SEEK_FORWARD
+        MENUITEM "向后一帧",                        IDC_SEEK_BACKWARD
+        MENUITEM SEPARATOR
+        MENUITEM "音量+",                         ID_VOLUME_UP
+        MENUITEM "音量-",                         ID_VOLUME_DOWN
+    END
+    POPUP "显示"
+    BEGIN
+        MENUITEM "画面放大",                        IDC_ZOOM_IN
+        MENUITEM "画面缩小",                        IDC_ZOOM_OUT
+        MENUITEM "原始尺寸",                        IDC_INIT_SIZE
+        MENUITEM SEPARATOR
+        MENUITEM "画面旋转",                        IDC_ROTATE_ANGLE
+        MENUITEM SEPARATOR
+        MENUITEM "窗口适应",                        IDC_WINDOW_FIT
+    END
     POPUP "视图(&V)"
     BEGIN
         MENUITEM "工具栏(&T)",                     ID_VIEW_TOOLBAR
         MENUITEM "状态栏(&S)",                     ID_VIEW_STATUS_BAR
-    END
-    POPUP "操作"
-    BEGIN
-        MENUITEM "拉近",                          IDC_ZOOM_IN
-        MENUITEM "拉远",                          IDC_ZOOM_OUT
         MENUITEM SEPARATOR
-        MENUITEM "旋转",                          IDC_ROTATE_ANGLE
-        MENUITEM "原始尺寸",                        IDC_INIT_SIZE
-        MENUITEM SEPARATOR
-        MENUITEM "向前",                          IDC_SEEK_FORWARD
-        MENUITEM "向后",                          IDC_SEEK_BACKWARD
-    END
-    POPUP "显示"
-    BEGIN
         MENUITEM "DirectDraw",                  IDC_SHOW_DIRECTDRAW
         MENUITEM "D3dSurface",                  IDC_SHOW_D3DSURFACE
         MENUITEM "D3dSpirit",                   IDC_SHOW_D3DSPIRIT
@@ -345,6 +357,13 @@ END
 STRINGTABLE
 BEGIN
     ID_FILE_PAUSE           "暂停\n暂停"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VOLUME_DOWN          "音量-"
+    ID_VOLUME_UP            "音量+"
+    IDC_WINDOW_FIT          "窗口适应\n窗口适应"
 END
 
 #endif    // 中文(简体，中国) resources

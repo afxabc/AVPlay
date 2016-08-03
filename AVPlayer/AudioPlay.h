@@ -21,6 +21,9 @@ public:
 	void inputPcm(const char* data, int len);
 	void reset();
 
+	DWORD setVolume(DWORD vol);	//0-100
+	DWORD getVolume();
+
 	bool isStart() { return started_; }
 	void setMute(bool mute = true) { mute_ = mute; }
 
@@ -45,5 +48,8 @@ private:
 	Queue<Buffer> playQueue_;
 	int ptime_;
 
+	static const int VOL_RANG = 100;
+	LONG volTable[VOL_RANG];
+	DWORD vol_;
 };
 

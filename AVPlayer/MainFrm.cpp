@@ -35,6 +35,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_BACKWARD, &CMainFrame::OnUpdateSeekBackward)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_FORWARD, &CMainFrame::OnUpdateSeekForward)
 	ON_WM_SIZE()
+	ON_COMMAND(ID_VOLUME_DOWN, &CMainFrame::OnVolumeDown)
+	ON_COMMAND(ID_VOLUME_UP, &CMainFrame::OnVolumeUp)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -216,11 +218,15 @@ void CMainFrame::resizeSlider()
 //		rectBar.right = rectBar.left + rectMain.right - 10;
 //		m_wndToolBar.MoveWindow(&rectBar);
 
+		int barLen = rectBar.right - rectBar.left;
+		
 		RECT rect;
 		m_wndToolBar.GetItemRect(index, &rect);
-		rect.right = rectBar.right-5;
+
+		int bnLen = barLen - rect.left - 5;
+		rect.right = rect.left + bnLen - 5;
 		rect.top += 3;
-		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, rect.right-rect.left);
+		m_wndToolBar.SetButtonInfo(index, ID_SEEK_BAR, TBBS_SEPARATOR, bnLen);
 		m_slider.MoveWindow(&rect);
 	}
 }
@@ -359,4 +365,20 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 
 	// TODO: 在此处添加消息处理程序代码
 	resizeSlider();
+}
+
+
+void CMainFrame::OnVolumeDown()
+{
+	// TODO: 在此添加命令处理程序代码
+	DWORD vol = player_.getVolume();
+	player_.setVolume(vol - 5);
+}
+
+
+void CMainFrame::OnVolumeUp()
+{
+	// TODO: 在此添加命令处理程序代码
+	DWORD vol = player_.getVolume();
+	player_.setVolume(vol + 5);
 }

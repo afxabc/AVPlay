@@ -89,6 +89,9 @@ protected:
 	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+public:
+	afx_msg void OnWindowFit();
+	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 };
 
 

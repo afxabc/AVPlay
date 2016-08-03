@@ -96,6 +96,8 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
+	ON_COMMAND(IDC_WINDOW_FIT, &CDrawWnd::OnWindowFit)
+	ON_WM_MBUTTONUP()
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -222,6 +224,20 @@ void CDrawWnd::OnInitSize()
 		cb_->OnResetSize(width_, height_);
 }
 
+void CDrawWnd::OnWindowFit()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	xPos_ = 0;
+	yPos_ = 0;
+	UpdateCoordinate(TRUE);
+
+	int width = (rotation_ == ROTATION_0 || rotation_ == ROTATION_180) ? width_ : height_;
+	int height = (rotation_ == ROTATION_0 || rotation_ == ROTATION_180) ? height_ : width_;
+	if (cb_)
+		cb_->OnResetSize(width*scale_/100, height*scale_/100);
+}
+
 void CDrawWnd::OnResetDevice()
 {
 	if (pHandle_ == NULL)
@@ -312,4 +328,12 @@ void CDrawWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	if (nChar == ' ')
 		keyDown_ = false;
 	CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+
+void CDrawWnd::OnMButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	OnWindowFit();
+	CWnd::OnMButtonUp(nFlags, point);
 }

@@ -73,6 +73,8 @@ public:
 	afx_msg void OnUpdateSeekBackward(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateSeekForward(CCmdUI *pCmdUI);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnVolumeDown();
+	afx_msg void OnVolumeUp();
 };
 
 
