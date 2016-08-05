@@ -131,6 +131,7 @@ private:
 	AVFrame			*pFrameYUV_;
 	AVFrame			*pFrameRGB_;
 	SwsContext		*swsContext_;
+	int				vPending_;
 	double  q2d_;
 
 	int64_t		timeTotal_;

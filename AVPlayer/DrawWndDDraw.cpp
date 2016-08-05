@@ -247,6 +247,8 @@ BOOL CDrawWndDDraw::ResetSurfaceFrm(int width, int height, LPBYTE data)
 
 	if (data != NULL)
 		DrawFrame(data, width, height);
+
+	return TRUE;
 }
 
 BOOL CDrawWndDDraw::ResetSurface(int width, int height, LPDIRECTDRAWSURFACE * ppSurface)

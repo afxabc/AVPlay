@@ -71,6 +71,7 @@ Player::Player()
 	, paused_(true)
 	, seeked_(true)
 	, timeTotal_(0)
+	, vPending_(0)
 {
 	av_register_all();
 	pFormatCtx_ = avformat_alloc_context();
@@ -233,6 +234,7 @@ void Player::tickForward()
 
 	timeBase_ = timeDtsV_+TIMER;
 	sigDecode_.on();
+	sigPlay_.on();
 }
 
 void Player::onTimer()
@@ -299,6 +301,8 @@ int64_t Player::createFrm(int64_t dts)
 	sws_scale(swsContext_, pFrameYUV_->data, pFrameYUV_->linesize, 0, frmOut.height_, pFrameRGB_->data, pFrameRGB_->linesize);
 	
 	//queuePlay_.insert(frmOut, packet.pts * q2d * 1000);
+	vPending_++;
+//	LOGW("################ %d", vPending_);
 	queuePlay_.insert(frmOut, timeDtsV_);
 	//直接播放可以，按pts播放反而错乱？？
 	//decodeFinish_(frmOut);
@@ -321,6 +325,11 @@ void Player::seekFrm()
 	}
 	else av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
 
+
+	vPending_ = 0;
+	queuePlay_.clear();
+	aPlay_.reset();
+
 	AVPacket packet;
 	while (!seeked_)
 	{
@@ -330,13 +339,14 @@ void Player::seekFrm()
 		int64_t dts = decodeVideo(packet);
 		if (dts * q2d_ * 1000 >= timeSeek_)
 		{
+			timeSeek_ = dts * q2d_ * 1000;
 			createFrm(dts);
 			break;
 		}
 	}
 	timeBase_ = timeSeek_;
-	queuePlay_.clear();
-	aPlay_.reset();
+	sigDecode_.on();
+	sigPlay_.on();
 }
 
 void Player::decodeAudio(AVPacket & packet)
@@ -415,6 +425,7 @@ void Player::decodeLoop()
 	timeDtsV_ = 0;
 	timeDtsA_ = 0;
 	timePts_ = 0;
+	vPending_ = 0;
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
 	sigDecode_.off();
@@ -428,8 +439,9 @@ void Player::decodeLoop()
 
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
 			{
-				paused_ = true;
-				timeBase_ = timeDtsV_ - TIMER - TIMER;
+			//	paused_ = true;
+				timeBase_ = timeDtsV_ - TIMER;
+				sigDecode_.wait(TIMER);
 			}
 			else if (videoindex_ == packet.stream_index)
 			{
@@ -445,15 +457,13 @@ void Player::decodeLoop()
 	
 		av_packet_unref(&packet);
 	//	while (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_ && thDecode_.started())
-		while (queuePlay_.size() > 10 && thDecode_.started())
+		while (vPending_ > 2 && thDecode_.started())
 			sigDecode_.wait();
 
 	}
 
 	av_packet_unref(&packet);
 
-	while (queuePlay_.size() > 0)
-		Thread::sleep(100);
 	mRes = ::timeKillEvent(mRes);
 
 	LOGW("+++++++++++++++ decodeLoop quit. +++++++++++++++");
@@ -485,7 +495,11 @@ void Player::playLoop()
 		{
 //			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)timePts_, frm.size_);
 			if (frm.type_ == FRAME_VIDEO)
+			{
+				vPending_--;
+//				LOGW("################ %d", vPending_);
 				decodeFinish_(frm);
+			}				
 			else aPlay_.inputPcm((char*)frm.data_, frm.size_);
 		}
 

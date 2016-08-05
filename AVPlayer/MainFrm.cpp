@@ -184,9 +184,13 @@ BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 
 void CMainFrame::onFrameData(FrameData frm)
 {
-	static const int MAX_QUEUE_SIZE = 16;
+	static const int MAX_QUEUE_SIZE = 4;
 	if (frms_.size() >= MAX_QUEUE_SIZE)
+	{
+		LOGW("onFrameData : queue fulled !!!!!!");
 		return;
+	}
+		
 
 	frms_.putBack(frm);
 	this->PostMessage(WM_COMMAND, IDOK);
@@ -256,8 +260,14 @@ void CMainFrame::OnFilePlay()
 	}
 	else
 	{
-		player_.stopPlay();
-		frms_.clear();
+		if (player_.isPaused())
+			player_.setPaused(false);
+		else
+		{
+			player_.stopPlay();
+			frms_.clear();
+		}
+		
 	}
 }
 
