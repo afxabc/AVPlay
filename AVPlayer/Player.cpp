@@ -110,9 +110,11 @@ bool Player::startPlay(const char* finame)
 			videoindex_ = i;
 		else if (pFormatCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && audioindex_ < 0)
 			audioindex_ = i;
+		else avcodec_close(pFormatCtx_->streams[i]->codec);
 
-		if (videoindex_ > 0 && audioindex_ > 0)
-			break;
+
+//		if (videoindex_ > 0 && audioindex_ > 0)
+//			break;
 	}
 
 	if (videoindex_ == -1)
@@ -317,13 +319,24 @@ void Player::seekFrm()
 	seeked_ = false;
 
 	Lock lock(mutex_);
+	if (timeSeek_ > timeTotal_ - TIMER)
+		timeSeek_ = timeTotal_ - TIMER;
+
 	double seekTm = (double)timeSeek_ / (1000 * q2d_);
+
+	int seek_ret = 0;
 	if (timeSeek_ > timeDtsV_)
 	{
-		av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
-		av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
 	}
-	else av_seek_frame(pFormatCtx_, videoindex_, seekTm - 1, AVSEEK_FLAG_BACKWARD);
+	else 
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
+
+	if (seek_ret < 0)
+	{
+		return;
+	}
 
 
 	vPending_ = 0;
@@ -331,12 +344,33 @@ void Player::seekFrm()
 	aPlay_.reset();
 
 	AVPacket packet;
+	bool get1 = false;
+	int64_t dts = 0;
 	while (!seeked_)
 	{
 		if (av_read_frame(pFormatCtx_, &packet) < 0)
-			break;
+		{
+			if (get1)
+			{
+				timeSeek_ = dts * q2d_ * 1000;
+				createFrm(dts);
+			}
 
-		int64_t dts = decodeVideo(packet);
+			LOGW("*** seek last frame got=%d ***", get1);
+			break;
+		}
+
+		if (videoindex_ != packet.stream_index)
+			continue;
+
+		dts = decodeVideo(packet);
+		if (dts < 0)
+		{
+			LOGW("*** decodeVideo failed=%d !!! ***", dts);
+			return;
+		}
+		else get1 = true;
+
 		if (dts * q2d_ * 1000 >= timeSeek_)
 		{
 			timeSeek_ = dts * q2d_ * 1000;
@@ -419,6 +453,7 @@ void Player::decodeAudio(AVPacket & packet)
 void Player::decodeLoop()
 {
 	AVPacket packet;
+	av_init_packet(&packet);
 
 	timeSeek_ = 0;
 	timeBase_ = 0;
@@ -432,21 +467,22 @@ void Player::decodeLoop()
 
 	paused_ = false;
 	seeked_ = false;
+
+	bool end = false;
 	while (thDecode_.started())
 	{
 		{
 			Lock lock(mutex_);
 
+			end = false;
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
 			{
-			//	paused_ = true;
+				end = true;
 				timeBase_ = timeDtsV_ - TIMER;
-				sigDecode_.wait(TIMER);
 			}
 			else if (videoindex_ == packet.stream_index)
 			{
-				if (createFrm(decodeVideo(packet)) < 0)
-					continue;
+				createFrm(decodeVideo(packet));
 			}
 			else if (audioindex_ == packet.stream_index)
 			{
@@ -456,9 +492,13 @@ void Player::decodeLoop()
 		}
 	
 		av_packet_unref(&packet);
+
 	//	while (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_ && thDecode_.started())
-		while (vPending_ > 2 && thDecode_.started())
+		while ((end || vPending_ > 3) && thDecode_.started())
+		{
 			sigDecode_.wait();
+			end = false;
+		}
 
 	}
 
