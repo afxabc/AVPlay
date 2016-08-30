@@ -9,6 +9,8 @@
 #pragma comment(lib, "dsound.lib")
 #pragma comment(lib,"dxguid.lib")
 
+using namespace eko;
+
 class AudioPlay
 {
 public:

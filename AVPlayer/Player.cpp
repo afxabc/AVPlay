@@ -110,7 +110,8 @@ bool Player::startPlay(const char* finame)
 			videoindex_ = i;
 		else if (pFormatCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && audioindex_ < 0)
 			audioindex_ = i;
-		else avcodec_close(pFormatCtx_->streams[i]->codec);
+		
+//		avcodec_close(pFormatCtx_->streams[i]->codec);
 
 
 //		if (videoindex_ > 0 && audioindex_ > 0)
@@ -165,9 +166,9 @@ bool Player::startPlay(const char* finame)
 		}
 	}
 
-	return (thDecode_.start(boost::bind(&Player::decodeLoop, this))
-		&& thPlay_.start(boost::bind(&Player::playLoop, this))
-		&& thSeek_.start(boost::bind(&Player::seekLoop, this))
+	return (thDecode_.start([this]() {this->decodeLoop(); })
+		&& thPlay_.start([this]() {this->playLoop(); })
+		&& thSeek_.start([this]() {this->seekLoop(); })
 		);
 }
 
@@ -234,7 +235,8 @@ void Player::tickForward()
 	paused_ = true;
 	Lock lock(mutex_);
 
-	timeBase_ = timeDtsV_+TIMER;
+//	timeBase_ += TIMER+ TIMER;
+	timeBase_ = timeDtsV_ + TIMER;
 	sigDecode_.on();
 	sigPlay_.on();
 }
@@ -260,6 +262,7 @@ int64_t Player::decodeVideo(AVPacket & packet)
 	}
 
 	int got_picture = 0;
+	av_frame_unref(pFrameYUV_);
 	int ret = avcodec_decode_video2(pVCodecCtx_, pFrameYUV_, &got_picture, &packet);
 	if (ret <= 0)
 	{
@@ -301,6 +304,7 @@ int64_t Player::createFrm(int64_t dts)
 
 	avpicture_fill((AVPicture *)pFrameRGB_, frmOut.data_, AV_PIX_FMT_BGRA, frmOut.width_, frmOut.height_);
 	sws_scale(swsContext_, pFrameYUV_->data, pFrameYUV_->linesize, 0, frmOut.height_, pFrameRGB_->data, pFrameRGB_->linesize);
+	av_frame_unref(pFrameYUV_);
 	
 	//queuePlay_.insert(frmOut, packet.pts * q2d * 1000);
 	vPending_++;
@@ -344,6 +348,8 @@ void Player::seekFrm()
 	aPlay_.reset();
 
 	AVPacket packet;
+	av_init_packet(&packet);
+
 	bool get1 = false;
 	int64_t dts = 0;
 	while (!seeked_)
@@ -361,13 +367,18 @@ void Player::seekFrm()
 		}
 
 		if (videoindex_ != packet.stream_index)
+		{
+			av_packet_unref(&packet);
 			continue;
+		}
 
 		dts = decodeVideo(packet);
+		av_packet_unref(&packet);
+
 		if (dts < 0)
 		{
 			LOGW("*** decodeVideo failed=%d !!! ***", dts);
-			return;
+			break;
 		}
 		else get1 = true;
 
@@ -378,6 +389,9 @@ void Player::seekFrm()
 			break;
 		}
 	}
+
+	av_packet_unref(&packet);
+
 	timeBase_ = timeSeek_;
 	sigDecode_.on();
 	sigPlay_.on();
@@ -493,8 +507,8 @@ void Player::decodeLoop()
 	
 		av_packet_unref(&packet);
 
-	//	while (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_ && thDecode_.started())
-		while ((end || vPending_ > 3) && thDecode_.started())
+		while ((end || (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_)) && thDecode_.started())
+	//	while ((end || vPending_ > 3) && thDecode_.started())
 		{
 			sigDecode_.wait();
 			end = false;
@@ -523,19 +537,19 @@ void Player::seekLoop()
 void Player::playLoop()
 {
 	FrameData frm;
-	int64_t when;
+	eko::MicroSecond when(0);
 
 	sigPlay_.off();
 	while (thPlay_.started())
 	{
-		while ((!queuePlay_.peerFront(timePts_) || timePts_ > timeBase_) && thPlay_.started())
+		while ((!queuePlay_.peerFront(when) || when > timeBase_) && thPlay_.started())
 			sigPlay_.wait(500);
 
 		if (queuePlay_.getFront(frm))
 		{
-//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)timePts_, frm.size_);
 			if (frm.type_ == FRAME_VIDEO)
 			{
+			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
 				vPending_--;
 //				LOGW("################ %d", vPending_);
 				decodeFinish_(frm);

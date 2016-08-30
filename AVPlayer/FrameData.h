@@ -46,4 +46,4 @@ public:
 };
 
 
-typedef boost::function<void(FrameData)> FrameHandler;
+typedef std::function<void(FrameData)> FrameHandler;

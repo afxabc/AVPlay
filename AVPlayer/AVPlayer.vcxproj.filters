@@ -39,9 +39,6 @@
     <ClInclude Include="FrameData.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="timequeue.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="DrawWnd.h">
       <Filter>头文件</Filter>
     </ClInclude>

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "FrameData.h"
-#include "timequeue.h"
 #include "AudioPlay.h"
 
+#include "timequeue.h"
 #include "base\thread.h"
 #include "base\queue.h"
 
@@ -15,7 +15,7 @@ extern "C"
 #include "libswresample\swresample.h"
 };
 
-#include "vld.h"
+//#include "vld.h"
 
 class AVPacketHold
 {
@@ -103,10 +103,11 @@ public:
 	DWORD setVolume(DWORD vol) { return aPlay_.setVolume(vol); }
 	DWORD getVolume() { return aPlay_.getVolume(); }
 
-private:
 	void decodeLoop();
 	void seekLoop();
 	void playLoop();
+
+private:
 	void decodeAudio(AVPacket& packet);
 	int64_t decodeVideo(AVPacket& packet);
 	int64_t createFrm(int64_t dts);

@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "DrawWndVertex.h"
 
-
-
 typedef struct
 {
 	FLOAT x, y, z;      // vertex untransformed position

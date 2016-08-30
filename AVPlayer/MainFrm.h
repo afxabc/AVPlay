@@ -12,7 +12,7 @@ class CMainFrame : public CFrameWnd, IDrawWndCallback
 {
 	
 public:
-	CMainFrame();
+	CMainFrame(LPCTSTR fipath = NULL);
 protected: 
 	DECLARE_DYNAMIC(CMainFrame)
 
@@ -60,6 +60,7 @@ protected:
 public:
 	afx_msg void OnFileOpen();
 	afx_msg void OnFilePlay();
+	afx_msg void OnPlayStartFile();
 	afx_msg void OnDrawFrame();
 	afx_msg void OnUpdateFilePlay(CCmdUI *pCmdUI);
 	afx_msg void OnClose();

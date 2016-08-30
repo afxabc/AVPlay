@@ -22,6 +22,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_SETFOCUS()
 	ON_COMMAND(ID_FILE_OPEN, &CMainFrame::OnFileOpen)
 	ON_COMMAND(ID_FILE_PLAY, &CMainFrame::OnFilePlay)
+	ON_COMMAND(ID_PLAY_START_FILE, &CMainFrame::OnPlayStartFile)
 	ON_COMMAND(IDOK, &CMainFrame::OnDrawFrame)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PLAY, &CMainFrame::OnUpdateFilePlay)
 	ON_WM_CLOSE()
@@ -48,7 +49,8 @@ static UINT indicators[] =
 
 // CMainFrame 构造/析构
 
-CMainFrame::CMainFrame()
+CMainFrame::CMainFrame(LPCTSTR fipath)
+	: fipath_(fipath)
 {
 	// TODO: 在此添加成员初始化代码
 }
@@ -131,9 +133,16 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 
 	LOGPRINT(&CMainFrame::print, this);
-	player_.setDecodeFinish(boost::bind(&CMainFrame::onFrameData, this, _1));
+//	player_.setDecodeFinish(boost::bind(&CMainFrame::onFrameData, this, _1));
+	player_.setDecodeFinish([this](FrameData frm) { this->onFrameData(frm); });
 
 	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
+
+	fipath_.Replace('"', ' ');
+	fipath_.Trim();
+	if (fipath_.GetLength() > 1)
+		PostMessage(WM_COMMAND, ID_PLAY_START_FILE);
+
 	return 0;
 }
 
@@ -203,12 +212,6 @@ void CMainFrame::print(Log::LEVEL level, const char * sformat)
 	TRACE(str.string());
 }
 
-bool CMainFrame::checkFilePath()
-{
-	CFileFind ff;
-	return ff.FindFile(fipath_);
-}
-
 void CMainFrame::resizeSlider()
 {
 	int index = m_wndToolBar.CommandToIndex(ID_SEEK_BAR);
@@ -235,6 +238,17 @@ void CMainFrame::resizeSlider()
 	}
 }
 
+bool CMainFrame::checkFilePath()
+{
+	CFileFind ff;
+	if (!ff.FindFile(fipath_))
+		return FALSE;
+
+	ff.FindNextFile();
+	this->SetWindowText(ff.GetFileTitle());
+	return TRUE;
+}
+
 void CMainFrame::OnFileOpen()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -243,7 +257,14 @@ void CMainFrame::OnFileOpen()
 		return;
 
 	fipath_ = fdlg.GetPathName();
-	this->SetWindowText(fdlg.GetFileTitle());
+	PostMessage(WM_COMMAND, ID_PLAY_START_FILE);
+}
+
+void CMainFrame::OnPlayStartFile()
+{
+	if (!checkFilePath())
+		return;
+
 	if (player_.startPlay(fipath_))
 		m_slider.SetRange(0, player_.getTimeTotal());
 	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);

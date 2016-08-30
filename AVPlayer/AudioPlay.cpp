@@ -90,7 +90,7 @@ bool AudioPlay::start(UINT samplesPerSec, UINT channels, unsigned char bitsPerSa
 	if (pDSB != NULL)
 		pDSB->Release();
 
-	if (!res || !thread_.start(boost::bind(&AudioPlay::loop, this)))
+	if (!res || !thread_.start([this]() {this->loop(); }))
 	{
 		if (pDSB8_ != NULL)
 			pDSB8_->Release();
@@ -129,7 +129,7 @@ void AudioPlay::inputPcm(const char * data, int len)
 	}
 
 	int matchSize = bufferNotifySize_;
-	recvBuff_.pushBack(data, len, true);
+	recvBuff_.pushBack(data, len);
 	if (recvBuff_.readableBytes() < matchSize)
 		return;
 
@@ -224,7 +224,7 @@ void AudioPlay::loop()
 
 			//			TRACE("offset=%d, offsetPlay=%d : ¾²Òô!!!!\n", offset, offsetPlay);
 			tmp.erase();
-			tmp.pushBack((unsigned char)0, bufferNotifySize_, true);		//¾²Òô
+			tmp.pushBack((unsigned char)0, bufferNotifySize_);		//¾²Òô
 		}
 		else
 		{

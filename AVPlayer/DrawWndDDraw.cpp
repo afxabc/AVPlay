@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "DrawWndDDraw.h"
 
-
 CDrawWndDDraw::CDrawWndDDraw(CWnd* wnd)
 	: rectWnd_(wnd)
 	, szWnd_(0, 0)

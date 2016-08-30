@@ -3,6 +3,7 @@
 
 #include <map>
 #include "base/mutex.h"
+#include "base/log.h"
 
 template <typename QDATA>
 class TimeQueue
@@ -18,13 +19,11 @@ public:
 		clear();
 	}
 
-	int64_t insert(const QDATA& data, int64_t when)
+
+	void insert(const QDATA& data, MicroSecond when)
 	{
 		Lock lock(mutex_);
 		queue_.insert(QPAIR(when, data));
-		QUEUE::iterator it = queue_.begin();
-		assert(it != queue_.end());
-		return it->first;
 	}
 
 	bool getFront(QDATA& data)
@@ -41,7 +40,7 @@ public:
 		return ret;
 	}
 
-	bool peerFront(int64_t& when)
+	bool peerFront(MicroSecond& when)
 	{
 		bool ret = false;
 		Lock lock(mutex_);
@@ -66,8 +65,8 @@ public:
 	}
 
 private:
-	typedef std::multimap<int64_t, QDATA> QUEUE;
-	typedef std::pair<int64_t, QDATA> QPAIR;
+	typedef std::multimap<MicroSecond, QDATA> QUEUE;
+	typedef std::pair<MicroSecond, QDATA> QPAIR;
 	QUEUE queue_;
 	mutable Mutex mutex_;
 };

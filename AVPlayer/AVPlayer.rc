@@ -70,14 +70,12 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\AVPlayer.ico"
 
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -110,11 +108,12 @@ IDR_MAINFRAME MENU
 BEGIN
     POPUP "文件(&F)"
     BEGIN
-        MENUITEM "打开",                          ID_FILE_OPEN
+        MENUITEM "打开....",                      ID_FILE_OPEN
         MENUITEM "播放",                          ID_FILE_PLAY
         MENUITEM "暂停",                          ID_FILE_PAUSE
         MENUITEM SEPARATOR
         MENUITEM "退出(&X)",                      ID_APP_EXIT
+        MENUITEM "打开",                          32804
     END
     POPUP "操作"
     BEGIN
