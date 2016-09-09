@@ -22,6 +22,8 @@
 #define ID_VOLUME_UP                    32801
 #define IDC_WINDOW_FIT                  32803
 #define ID_PLAY_START_FILE              32804
+#define ID_32805                        32805
+#define ID_FRAME_SAVE                   32806
 #define IDC_SHOW_START                  35000
 #define IDC_SHOW_DIRECTDRAW             35001
 #define IDC_SHOW_D3DSURFACE             35002
@@ -34,7 +36,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        311
-#define _APS_NEXT_COMMAND_VALUE         32805
+#define _APS_NEXT_COMMAND_VALUE         32807
 #define _APS_NEXT_CONTROL_VALUE         1003
 #define _APS_NEXT_SYMED_VALUE           311
 #endif

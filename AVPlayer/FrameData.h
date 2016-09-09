@@ -33,8 +33,12 @@ public:
 
 	void reset();
 
+	bool toFileJpg(const char* fipath);
+	bool toFilePng(const char* fipath);
+
 private:
 	void take(const FrameData& p);
+	bool toFile(const char* fmt, const char* fipath);
 
 public:
 	mutable FrameType type_;

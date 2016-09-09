@@ -76,6 +76,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnVolumeDown();
 	afx_msg void OnVolumeUp();
+	afx_msg void OnFrameSave();
+	afx_msg void OnUpdateFrameSave(CCmdUI *pCmdUI);
 };
 
 

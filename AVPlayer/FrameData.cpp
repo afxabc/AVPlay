@@ -1,5 +1,13 @@
 #include "FrameData.h"
 
+extern "C"
+{
+#include "libavcodec\avcodec.h"
+#include "libavformat\avformat.h"
+#include "libswscale\swscale.h"
+#include "libswresample\swresample.h"
+};
+
 FrameData::FrameData()
 	: type_(FRAME_VIDEO)
 	, width_(0)
@@ -58,4 +66,142 @@ void FrameData::reset()
 	delete[] data_;
 	data_ = NULL;
 	size_ = 0;
+}
+
+bool FrameData::toFile(const char * fmtstr, const char * fipath)
+{ 
+	if (data_ == NULL || size_ == 0)
+		return false;
+
+	AVFormatContext* pFormatCtx = NULL;
+	AVOutputFormat* fmt = NULL;
+	AVStream* video_st = NULL;
+	AVCodecContext* pCodecCtx = NULL;
+	AVCodec* pCodec = NULL;
+
+	AVFrame* pFrameYUV = NULL;
+	AVFrame* pFrameRGB = NULL;
+
+	AVPacket pkt;
+	av_new_packet(&pkt, width_*height_ * 3);
+
+	bool ret = false;
+
+	pFormatCtx = avformat_alloc_context();
+	//Guess format  
+	fmt = av_guess_format(fmtstr, NULL, NULL);
+	pFormatCtx->oformat = fmt;
+	//Output URL  
+	if (avio_open(&pFormatCtx->pb, fipath, AVIO_FLAG_READ_WRITE) < 0) 
+	{
+		LOGE("Couldn't open output file.");
+		goto END;
+	}
+
+	video_st = avformat_new_stream(pFormatCtx, 0);
+	if (video_st == NULL) 
+	{
+		goto END;
+	}
+	pCodecCtx = video_st->codec;
+	pCodecCtx->codec_id = fmt->video_codec;
+	pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
+	pCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
+
+	pCodecCtx->width = width_;
+	pCodecCtx->height = height_;
+
+	pCodecCtx->time_base.num = 1;
+	pCodecCtx->time_base.den = 25;
+	//Output some information  
+	av_dump_format(pFormatCtx, 0, fipath, 1);
+
+	pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
+	if (!pCodec) 
+	{
+		LOGE("Codec not found.");
+		goto END;
+	}
+	if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) 
+	{
+		LOGE("Could not open codec.");
+		goto END;
+	}
+
+	SwsContext* swsContext = sws_getContext(width_, height_, AV_PIX_FMT_BGRA, width_, height_, pCodecCtx->pix_fmt, SWS_BICUBIC, NULL, NULL, NULL);
+
+	pFrameYUV = av_frame_alloc();
+	size_t size = avpicture_get_size(pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
+	uint8_t* picture_buf = (uint8_t*)av_malloc(size);
+	avpicture_fill((AVPicture *)pFrameYUV, picture_buf, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
+	pFrameYUV->format = pCodecCtx->pix_fmt;
+	pFrameYUV->width = width_;
+	pFrameYUV->height = height_;
+
+	pFrameRGB = av_frame_alloc();
+	avpicture_fill((AVPicture *)pFrameRGB, data_, AV_PIX_FMT_BGRA, width_, height_);
+	pFrameRGB->format = AV_PIX_FMT_BGRA;
+	pFrameRGB->width = width_;
+	pFrameRGB->height = height_;
+
+	sws_scale(swsContext, pFrameRGB->data, pFrameRGB->linesize, 0, height_, pFrameYUV->data, pFrameYUV->linesize);
+	
+
+	sws_freeContext(swsContext);
+
+	int got_picture = 0;
+
+	//Encode  
+	if (avcodec_encode_video2(pCodecCtx, &pkt, pFrameYUV, &got_picture) < 0)
+	{
+		LOGE("Encode Error.\n");
+		goto END;
+	}
+
+	if (got_picture == 1) 
+	{
+		pkt.stream_index = video_st->index;
+		pkt.dts = pkt.pts = 10;
+		av_write_frame(pFormatCtx, &pkt);
+	}
+
+	//Write Trailer  
+	av_write_trailer(pFormatCtx);
+	LOGI("Encode Successful.\n");
+
+	ret = true;
+
+END:
+	av_free_packet(&pkt);
+
+	if (video_st) 
+		avcodec_close(video_st->codec);
+
+	if (pFrameRGB)
+	{
+		av_frame_unref(pFrameRGB);
+	}
+		
+	if (pFrameYUV)
+	{
+		av_frame_unref(pFrameYUV);
+		av_free(picture_buf);
+	}
+	if (pFormatCtx)
+	{
+		avio_close(pFormatCtx->pb);
+		avformat_free_context(pFormatCtx);
+	}
+	
+	return ret;
+}
+
+bool FrameData::toFileJpg(const char * fipath)
+{
+	return toFile("mjpeg", fipath);
+}
+
+bool FrameData::toFilePng(const char * fipath)
+{
+	return false;
 }

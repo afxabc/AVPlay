@@ -70,12 +70,14 @@ END
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\AVPlayer.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -90,7 +92,7 @@ BEGIN
     BUTTON      IDC_SEEK_BACKWARD
     BUTTON      IDC_SEEK_FORWARD
     SEPARATOR
-    BUTTON      ID_VOLUME_BAR
+    BUTTON      ID_FRAME_SAVE
     SEPARATOR
     BUTTON      ID_VOLUME_DOWN
     BUTTON      ID_VOLUME_UP
@@ -122,6 +124,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "音量+",                         ID_VOLUME_UP
         MENUITEM "音量-",                         ID_VOLUME_DOWN
+        MENUITEM SEPARATOR
+        MENUITEM "保存图像",                        ID_FRAME_SAVE
     END
     POPUP "显示"
     BEGIN
@@ -363,6 +367,7 @@ BEGIN
     ID_VOLUME_DOWN          "音量-"
     ID_VOLUME_UP            "音量+"
     IDC_WINDOW_FIT          "窗口适应\n窗口适应"
+    ID_FRAME_SAVE           "保存图像\n保存图像"
 END
 
 #endif    // 中文(简体，中国) resources

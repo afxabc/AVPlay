@@ -38,6 +38,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_SIZE()
 	ON_COMMAND(ID_VOLUME_DOWN, &CMainFrame::OnVolumeDown)
 	ON_COMMAND(ID_VOLUME_UP, &CMainFrame::OnVolumeUp)
+	ON_COMMAND(ID_FRAME_SAVE, &CMainFrame::OnFrameSave)
+	ON_UPDATE_COMMAND_UI(ID_FRAME_SAVE, &CMainFrame::OnUpdateFrameSave)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -112,7 +114,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
 	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 120);
-	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 120);
+	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 320);
 	m_wndStatusBar.SetPaneStyle(2, SBPS_STRETCH | SBPS_NORMAL);
 
 	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_BOTTOM | CBRS_GRIPPER | CBRS_TOOLTIPS) ||
@@ -200,7 +202,6 @@ void CMainFrame::onFrameData(FrameData frm)
 		return;
 	}
 		
-
 	frms_.putBack(frm);
 	this->PostMessage(WM_COMMAND, IDOK);
 }
@@ -310,7 +311,10 @@ void CMainFrame::OnDrawFrame()
 		m_slider.SetPos(f.tm_);
 
 	CString str;
-	str.Format("%.2f / %.2f", (float)f.tm_/1000.0f, (float)player_.getTimeTotal()/1000.0f);
+	Timestamp tm = Timestamp(f.tm_);
+	Timestamp tm_all = Timestamp(player_.getTimeTotal());
+
+	str.Format("%s / %s", tm.toString().c_str(), tm_all.toString().c_str());
 	m_wndStatusBar.SetPaneText(1, str);
 }
 
@@ -398,7 +402,6 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	resizeSlider();
 }
 
-
 void CMainFrame::OnVolumeDown()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -406,10 +409,22 @@ void CMainFrame::OnVolumeDown()
 	player_.setVolume(vol - 5);
 }
 
-
 void CMainFrame::OnVolumeUp()
 {
 	// TODO: 在此添加命令处理程序代码
 	DWORD vol = player_.getVolume();
 	player_.setVolume(vol + 5);
+}
+
+void CMainFrame::OnFrameSave()
+{
+	// TODO: 在此添加命令处理程序代码
+	player_.setPaused(true);
+	m_wndView.SaveFrame("f:\\aaaa.jpg");
+}
+
+void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->Enable(player_.isPlaying());
 }

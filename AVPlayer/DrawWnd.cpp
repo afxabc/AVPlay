@@ -21,9 +21,9 @@ CDrawWnd::CDrawWnd()
 	, xPos_(0.0f)
 	, yPos_(0.0f)
 	, width_(801)
-	, height_(601)
+	, height_(451)
 	, WIDTH_(801)
-	, HEIGHT_(601)
+	, HEIGHT_(451)
 	, rotation_(ROTATION_0)
 	, idHandle_(0)
 	, keyDown_(false)
@@ -64,6 +64,11 @@ void CDrawWnd::ResetDrawWndHandle()
 
 	pHandle_->CreateDevice(GetSafeHwnd());
 	UpdateCoordinate(TRUE);
+}
+
+bool CDrawWnd::SaveFrame(const char * fipath)
+{
+	return frmBak_.toFileJpg(fipath);
 }
 
 bool CDrawWnd::checkForEdge()

@@ -28,6 +28,8 @@ public:
 	void DrawFrame(const FrameData& f);
 	void ResetDrawWndHandle();
 
+	bool SaveFrame(const char* fipath);
+
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)
 	{

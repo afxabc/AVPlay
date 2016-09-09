@@ -549,7 +549,7 @@ void Player::playLoop()
 		{
 			if (frm.type_ == FRAME_VIDEO)
 			{
-			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
+		//	LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
 				vPending_--;
 //				LOGW("################ %d", vPending_);
 				decodeFinish_(frm);
