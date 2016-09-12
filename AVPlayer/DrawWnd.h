@@ -28,7 +28,15 @@ public:
 	void DrawFrame(const FrameData& f);
 	void ResetDrawWndHandle();
 
-	bool SaveFrame(const char* fipath);
+	inline bool SaveFrame(const char* fipath)
+	{
+		return frmBak_.toFileJpg(fipath);
+	}
+
+	const FrameData& frame()
+	{
+		return frmBak_;
+	}
 
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)

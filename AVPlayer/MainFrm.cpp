@@ -420,7 +420,16 @@ void CMainFrame::OnFrameSave()
 {
 	// TODO: 在此添加命令处理程序代码
 	player_.setPaused(true);
-	m_wndView.SaveFrame("f:\\aaaa.jpg");
+
+	const FrameData& frm = m_wndView.frame();
+
+	CString finame;
+	GetWindowText(finame);
+	finame += " - ";
+	finame += Timestamp(frm.tm_).toString().c_str();
+	finame += ".jpg";
+
+	frm.toFileJpg("f:/"+ finame);
 }
 
 void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)

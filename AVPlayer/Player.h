@@ -15,7 +15,7 @@ extern "C"
 #include "libswresample\swresample.h"
 };
 
-//#include "vld.h"
+#include "vld.h"
 
 class AVPacketHold
 {

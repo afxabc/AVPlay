@@ -66,11 +66,6 @@ void CDrawWnd::ResetDrawWndHandle()
 	UpdateCoordinate(TRUE);
 }
 
-bool CDrawWnd::SaveFrame(const char * fipath)
-{
-	return frmBak_.toFileJpg(fipath);
-}
-
 bool CDrawWnd::checkForEdge()
 {
 	return false;

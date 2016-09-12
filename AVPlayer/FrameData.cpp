@@ -68,14 +68,14 @@ void FrameData::reset()
 	size_ = 0;
 }
 
-bool FrameData::toFile(const char * fmtstr, const char * fipath)
+bool FrameData::toFile(const char * fmtstr, const char * fipath) const
 { 
 	if (data_ == NULL || size_ == 0)
 		return false;
 
 	AVFormatContext* pFormatCtx = NULL;
-	AVOutputFormat* fmt = NULL;
-	AVStream* video_st = NULL;
+	AVOutputFormat* pOutFormat = NULL;
+	AVStream* pAVStream  = NULL;
 	AVCodecContext* pCodecCtx = NULL;
 	AVCodec* pCodec = NULL;
 
@@ -89,8 +89,8 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath)
 
 	pFormatCtx = avformat_alloc_context();
 	//Guess format  
-	fmt = av_guess_format(fmtstr, NULL, NULL);
-	pFormatCtx->oformat = fmt;
+	pOutFormat = av_guess_format(fmtstr, NULL, NULL);
+	pFormatCtx->oformat = pOutFormat;
 	//Output URL  
 	if (avio_open(&pFormatCtx->pb, fipath, AVIO_FLAG_READ_WRITE) < 0) 
 	{
@@ -98,13 +98,13 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath)
 		goto END;
 	}
 
-	video_st = avformat_new_stream(pFormatCtx, 0);
-	if (video_st == NULL) 
+	pAVStream  = avformat_new_stream(pFormatCtx, 0);
+	if (pAVStream  == NULL) 
 	{
 		goto END;
 	}
-	pCodecCtx = video_st->codec;
-	pCodecCtx->codec_id = fmt->video_codec;
+	pCodecCtx = pAVStream ->codec;
+	pCodecCtx->codec_id = pOutFormat->video_codec;
 	pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
 	pCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
 
@@ -113,8 +113,10 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath)
 
 	pCodecCtx->time_base.num = 1;
 	pCodecCtx->time_base.den = 25;
+
+	avformat_write_header(pFormatCtx, NULL);
 	//Output some information  
-	av_dump_format(pFormatCtx, 0, fipath, 1);
+//	av_dump_format(pFormatCtx, 0, fipath, 1);
 
 	pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
 	if (!pCodec) 
@@ -160,7 +162,7 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath)
 
 	if (got_picture == 1) 
 	{
-		pkt.stream_index = video_st->index;
+		pkt.stream_index = pAVStream ->index;
 		pkt.dts = pkt.pts = 10;
 		av_write_frame(pFormatCtx, &pkt);
 	}
@@ -174,34 +176,36 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath)
 END:
 	av_free_packet(&pkt);
 
-	if (video_st) 
-		avcodec_close(video_st->codec);
-
 	if (pFrameRGB)
 	{
-		av_frame_unref(pFrameRGB);
+		av_frame_free(&pFrameRGB);
 	}
 		
 	if (pFrameYUV)
 	{
-		av_frame_unref(pFrameYUV);
+		av_frame_free(&pFrameYUV);
 		av_free(picture_buf);
 	}
+
+	if (pCodecCtx)
+		avcodec_close(pCodecCtx);
+
 	if (pFormatCtx)
 	{
 		avio_close(pFormatCtx->pb);
 		avformat_free_context(pFormatCtx);
 	}
+
 	
 	return ret;
 }
 
-bool FrameData::toFileJpg(const char * fipath)
+bool FrameData::toFileJpg(const char * fipath) const
 {
 	return toFile("mjpeg", fipath);
 }
 
-bool FrameData::toFilePng(const char * fipath)
+bool FrameData::toFilePng(const char * fipath) const
 {
 	return false;
 }
