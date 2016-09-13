@@ -104,6 +104,12 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath) const
 		goto END;
 	}
 	pCodecCtx = pAVStream ->codec;
+
+	av_opt_set(pCodecCtx->priv_data, "preset", "slow", 0);
+
+	pCodecCtx->flags |= CODEC_FLAG_QSCALE;
+	pCodecCtx->global_quality = (int)(FF_QP2LAMBDA * 10 + 0.5);
+
 	pCodecCtx->codec_id = pOutFormat->video_codec;
 	pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
 	pCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P;
@@ -113,6 +119,7 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath) const
 
 	pCodecCtx->time_base.num = 1;
 	pCodecCtx->time_base.den = 25;
+
 
 	avformat_write_header(pFormatCtx, NULL);
 	//Output some information  

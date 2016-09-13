@@ -422,14 +422,22 @@ void CMainFrame::OnFrameSave()
 	player_.setPaused(true);
 
 	const FrameData& frm = m_wndView.frame();
-
 	CString finame;
 	GetWindowText(finame);
 	finame += " - ";
 	finame += Timestamp(frm.tm_).toString().c_str();
 	finame += ".jpg";
+	finame.Replace(':', '_');
 
-	frm.toFileJpg("f:/"+ finame);
+	static const char szFilters[] = "Í¼ÏñÎÄ¼þ(*.jpg, *.jpeg)|*.jpg|*.jpeg||";
+	// Create an Open dialog; the default file name extension is ".my".
+	CFileDialog fileDlg(FALSE, "jpg", finame,
+		OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, szFilters, this);
+
+	if (fileDlg.DoModal() != IDOK)
+		return;
+
+	frm.toFileJpg(fileDlg.GetPathName());
 }
 
 void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)
