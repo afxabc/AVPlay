@@ -507,11 +507,15 @@ void Player::decodeLoop()
 	
 		av_packet_unref(&packet);
 
-		while ((end || (timeDtsV_ > timeBase_ && timeDtsA_ > timeBase_)) && thDecode_.started())
-	//	while ((end || vPending_ > 3) && thDecode_.started())
+		int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
+		while ((end || (tmMin > timeBase_)) && thDecode_.started())
+	//	while ((end || vPending_ >= 1) && thDecode_.started())
 		{
+//			LOGW("wait ...... dts_v=%d dts_a=%d base=%d", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_);
 			sigDecode_.wait();
 			end = false;
+			if (paused_)
+				break;
 		}
 
 	}
@@ -542,20 +546,21 @@ void Player::playLoop()
 	sigPlay_.off();
 	while (thPlay_.started())
 	{
-		while ((!queuePlay_.peerFront(when) || when > timeBase_) && thPlay_.started())
-			sigPlay_.wait(500);
+//		while ((!queuePlay_.peerFront(when) || when > timeBase_) && thPlay_.started())
+//			sigPlay_.wait(500);
 
 		if (queuePlay_.getFront(frm))
 		{
 			if (frm.type_ == FRAME_VIDEO)
 			{
-		//	LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
+//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
 				vPending_--;
 //				LOGW("################ %d", vPending_);
 				decodeFinish_(frm);
 			}				
 			else aPlay_.inputPcm((char*)frm.data_, frm.size_);
 		}
+		else sigPlay_.wait(100);
 
 	}
 	queuePlay_.clear();

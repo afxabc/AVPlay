@@ -195,7 +195,7 @@ BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 
 void CMainFrame::onFrameData(FrameData frm)
 {
-	static const int MAX_QUEUE_SIZE = 4;
+	static const int MAX_QUEUE_SIZE = 16;
 	if (frms_.size() >= MAX_QUEUE_SIZE)
 	{
 		LOGW("onFrameData : queue fulled !!!!!!");
@@ -362,7 +362,8 @@ void CMainFrame::OnUpdateSeekForward(CCmdUI *pCmdUI)
 void CMainFrame::OnSeekBackward()
 {
 	// TODO: 在此添加命令处理程序代码
-	player_.seekTime(player_ .getTime()-100);
+	player_.setPaused(true);
+	player_.seekTime(player_ .getTime()-120);
 }
 
 void CMainFrame::OnSeekForward()
