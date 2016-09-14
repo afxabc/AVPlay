@@ -40,6 +40,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(ID_VOLUME_UP, &CMainFrame::OnVolumeUp)
 	ON_COMMAND(ID_FRAME_SAVE, &CMainFrame::OnFrameSave)
 	ON_UPDATE_COMMAND_UI(ID_FRAME_SAVE, &CMainFrame::OnUpdateFrameSave)
+	ON_WM_ACTIVATE()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -113,7 +114,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 未能创建
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
-	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 120);
+	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 100);
 	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 320);
 	m_wndStatusBar.SetPaneStyle(2, SBPS_STRETCH | SBPS_NORMAL);
 
@@ -363,7 +364,7 @@ void CMainFrame::OnSeekBackward()
 {
 	// TODO: 在此添加命令处理程序代码
 	player_.setPaused(true);
-	player_.seekTime(player_ .getTime()-120);
+	player_.seekTime(player_ .getTime()-100);
 }
 
 void CMainFrame::OnSeekForward()
@@ -445,4 +446,14 @@ void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码
 	pCmdUI->Enable(player_.isPlaying());
+}
+
+
+void CMainFrame::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
+{
+	__super::OnActivate(nState, pWndOther, bMinimized);
+
+	// TODO: 在此处添加消息处理程序代码
+	if (!bMinimized)
+		m_wndView.ReDraw();
 }

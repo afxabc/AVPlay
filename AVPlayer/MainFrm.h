@@ -78,6 +78,7 @@ public:
 	afx_msg void OnVolumeUp();
 	afx_msg void OnFrameSave();
 	afx_msg void OnUpdateFrameSave(CCmdUI *pCmdUI);
+	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 };
 
 

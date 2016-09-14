@@ -14,7 +14,7 @@ extern "C"
 #include "libswscale\swscale.h"
 #include "libswresample\swresample.h"
 };
-
+#include <atomic>
 #include "vld.h"
 
 class AVPacketHold
@@ -134,7 +134,7 @@ private:
 	AVFrame			*pFrameYUV_;
 	AVFrame			*pFrameRGB_;
 	SwsContext		*swsContext_;
-	int				vPending_;
+	std::atomic_int32_t vPending_;
 	double  q2d_;
 
 	int64_t		timeTotal_;
@@ -158,7 +158,8 @@ private:
 	mutable Mutex mutexPts_;
 	Thread thPlay_;
 	Signal sigPlay_;
-	TimeQueue<FrameData> queuePlay_;
+	TimeQueue<FrameData> queuePlayV_;
+	TimeQueue<FrameData> queuePlayA_;
 
 	FrameHandler decodeFinish_;
 

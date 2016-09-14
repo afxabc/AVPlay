@@ -28,6 +28,12 @@ public:
 	void DrawFrame(const FrameData& f);
 	void ResetDrawWndHandle();
 
+	void ReDraw()
+	{
+		if (pHandle_)
+			pHandle_->Render();
+	}
+
 	inline bool SaveFrame(const char* fipath)
 	{
 		return frmBak_.toFileJpg(fipath);

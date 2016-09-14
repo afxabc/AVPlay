@@ -236,7 +236,8 @@ void Player::tickForward()
 	Lock lock(mutex_);
 
 //	timeBase_ += TIMER+ TIMER;
-	timeBase_ = timeDtsV_ + TIMER;
+//	timeBase_ = timeDtsV_ + TIMER;
+	timeBase_ = timePts_ + TIMER;
 	sigDecode_.on();
 	sigPlay_.on();
 }
@@ -309,7 +310,7 @@ int64_t Player::createFrm(int64_t dts)
 	//queuePlay_.insert(frmOut, packet.pts * q2d * 1000);
 	vPending_++;
 //	LOGW("################ %d", vPending_);
-	queuePlay_.insert(frmOut, timeDtsV_);
+	queuePlayV_.insert(frmOut, timeDtsV_);
 	//直接播放可以，按pts播放反而错乱？？
 	//decodeFinish_(frmOut);
 
@@ -344,7 +345,8 @@ void Player::seekFrm()
 
 
 	vPending_ = 0;
-	queuePlay_.clear();
+	queuePlayV_.clear();
+	queuePlayA_.clear();
 	aPlay_.reset();
 
 	AVPacket packet;
@@ -449,7 +451,7 @@ void Player::decodeAudio(AVPacket & packet)
 			frmOut.data_ = new BYTE[frmOut.size_];
 			memcpy(frmOut.data_, pcmBuffer_, frmOut.size_);
 
-			queuePlay_.insert(frmOut, timeDtsA_);
+			queuePlayA_.insert(frmOut, timeDtsA_);
 		//	aPlay_.inputPcm(pcmBuffer_, nb*2*2);
 		}
 
@@ -507,15 +509,13 @@ void Player::decodeLoop()
 	
 		av_packet_unref(&packet);
 
-		int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
-		while ((end || (tmMin > timeBase_)) && thDecode_.started())
-	//	while ((end || vPending_ >= 1) && thDecode_.started())
+//		int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
+//		while ((end || (tmMin > timeBase_)) && thDecode_.started())
+		while ((end || vPending_ >= 4) && thDecode_.started())
 		{
 //			LOGW("wait ...... dts_v=%d dts_a=%d base=%d", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_);
 			sigDecode_.wait();
 			end = false;
-			if (paused_)
-				break;
 		}
 
 	}
@@ -542,27 +542,39 @@ void Player::playLoop()
 {
 	FrameData frm;
 	eko::MicroSecond when(0);
+	bool gotFrm = false;
 
 	sigPlay_.off();
 	while (thPlay_.started())
 	{
-//		while ((!queuePlay_.peerFront(when) || when > timeBase_) && thPlay_.started())
-//			sigPlay_.wait(500);
+		gotFrm = false;
 
-		if (queuePlay_.getFront(frm))
+		timePts_ = 0;
+		if (queuePlayV_.peerFront(when))
 		{
-			if (frm.type_ == FRAME_VIDEO)
+			timePts_ = when;
+			if (when <= timeBase_ && queuePlayV_.getFront(frm))
 			{
-//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
+//				LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
 				vPending_--;
-//				LOGW("################ %d", vPending_);
 				decodeFinish_(frm);
-			}				
-			else aPlay_.inputPcm((char*)frm.data_, frm.size_);
+				gotFrm = true;
+			}
 		}
-		else sigPlay_.wait(100);
 
+		if (queuePlayA_.peerFront(when))
+		{
+			if (when <= timeBase_ && queuePlayA_.getFront(frm))
+			{
+				aPlay_.inputPcm((char*)frm.data_, frm.size_);
+				gotFrm = true;
+			}
+		}
+			
+		if (!gotFrm)
+			sigPlay_.wait(100);
 	}
-	queuePlay_.clear();
+	queuePlayV_.clear();
+	queuePlayA_.clear();
 	LOGW("================ playLoop quit. ================");
 }
