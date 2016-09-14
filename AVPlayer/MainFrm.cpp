@@ -48,6 +48,8 @@ static UINT indicators[] =
 	ID_SEPARATOR,           // 状态行指示器
 	ID_SEPARATOR,           // 
 	ID_SEPARATOR,           // 
+	ID_SEPARATOR,           // 
+	ID_SEPARATOR,           // 
 };
 
 // CMainFrame 构造/析构
@@ -87,11 +89,12 @@ void CMainFrame::OnResetSize(int width, int height)
 	
 }
 
-void CMainFrame::ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd)
+void CMainFrame::ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
 {
 	CString str;
-	str.Format("scale=%.2f; rotate=%.2f; pos(%d, %d); szFrm(%d, %d); szWnd(%d, %d)", scale, rotate, pos.x, pos.y, szFrm.cx, szFrm.cy, szWnd.cx, szWnd.cy);
-	m_wndStatusBar.SetPaneText(2, str);
+//	str.Format("scale=%.2f; rotate=%.2f; pos(%d, %d); szFrm(%d, %d); szWnd(%d, %d)", scale, rotate, pos.x, pos.y, szFrm.cx, szFrm.cy, szWnd.cx, szWnd.cy);
+	str.Format("%d x %d (%d%%)", szFrm.cx, szFrm.cy, scale);
+	m_wndStatusBar.SetPaneText(3, str);
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -115,8 +118,10 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
 	m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 100);
-	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 320);
-	m_wndStatusBar.SetPaneStyle(2, SBPS_STRETCH | SBPS_NORMAL);
+	m_wndStatusBar.SetPaneInfo(1, ID_SEPARATOR, SBPS_NORMAL, 100);
+	m_wndStatusBar.SetPaneInfo(2, ID_SEPARATOR, SBPS_NORMAL, 100);
+	m_wndStatusBar.SetPaneInfo(3, ID_SEPARATOR, SBPS_NORMAL, 120);
+	m_wndStatusBar.SetPaneStyle(4, SBPS_STRETCH | SBPS_NORMAL);
 
 	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_BOTTOM | CBRS_GRIPPER | CBRS_TOOLTIPS) ||
 		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
@@ -268,7 +273,13 @@ void CMainFrame::OnPlayStartFile()
 		return;
 
 	if (player_.startPlay(fipath_))
+	{
 		m_slider.SetRange(0, player_.getTimeTotal());
+		Timestamp tm = Timestamp(player_.getTimeTotal());
+		CString str;
+		str.Format("%s", tm.toString().c_str());
+		m_wndStatusBar.SetPaneText(2, str);
+	}
 	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
 }
 
@@ -290,7 +301,6 @@ void CMainFrame::OnFilePlay()
 			player_.stopPlay();
 			frms_.clear();
 		}
-		
 	}
 }
 
@@ -311,11 +321,9 @@ void CMainFrame::OnDrawFrame()
 	if (GetCapture() != &m_slider)
 		m_slider.SetPos(f.tm_);
 
-	CString str;
 	Timestamp tm = Timestamp(f.tm_);
-	Timestamp tm_all = Timestamp(player_.getTimeTotal());
-
-	str.Format("%s / %s", tm.toString().c_str(), tm_all.toString().c_str());
+	CString str;
+	str.Format("%s", tm.toString().c_str());
 	m_wndStatusBar.SetPaneText(1, str);
 }
 

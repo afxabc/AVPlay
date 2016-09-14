@@ -119,8 +119,8 @@ BEGIN
     END
     POPUP "操作"
     BEGIN
-        MENUITEM "向前一帧",                        IDC_SEEK_FORWARD
-        MENUITEM "向后一帧",                        IDC_SEEK_BACKWARD
+        MENUITEM "向前步进",                        IDC_SEEK_FORWARD
+        MENUITEM "向后步进",                        IDC_SEEK_BACKWARD
         MENUITEM SEPARATOR
         MENUITEM "音量+",                         ID_VOLUME_UP
         MENUITEM "音量-",                         ID_VOLUME_DOWN
@@ -360,6 +360,8 @@ END
 STRINGTABLE
 BEGIN
     ID_FILE_PAUSE           "暂停\n暂停"
+    IDC_SEEK_FORWARD        "向前步进\n向前步进"
+    IDC_SEEK_BACKWARD       "向后步进\n向后步进"
 END
 
 STRINGTABLE

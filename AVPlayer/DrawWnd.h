@@ -1,14 +1,14 @@
 #pragma once
 
+#include "DrawWndHandle.h"
+
 
 class IDrawWndCallback
 {
 public:
 	virtual void OnResetSize(int width, int height) = 0;
-	virtual void ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
+	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
 };
-
-#include "DrawWndHandle.h"
 
 // CDrawWnd
 
@@ -55,7 +55,7 @@ protected:
 		}
 
 		if (cb_)
-			cb_->ReportParams(scale_ / 100.0f, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
+			cb_->ReportParams(scale_, rotation_, CPoint(xPos_, yPos_), CSize(width_, height_), CSize(WIDTH_, HEIGHT_));
 	}
 
 	bool checkForEdge();

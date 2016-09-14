@@ -19,7 +19,7 @@ protected:
 // ÌØÐÔ
 public:
 	virtual void OnResetSize(int width, int height);
-	virtual void ReportParams(float scale, float rotate, POINT pos, SIZE szFrm, SIZE szWnd);
+	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 
 // ²Ù×÷
 public:
