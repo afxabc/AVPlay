@@ -30,8 +30,9 @@ bool AudioPlay::start(UINT samplesPerSec, UINT channels, unsigned char bitsPerSa
 {
 	stop();
 
-	ptime_ = ptime*2;
-
+	//ÒÉÎÊ£¬±ØÐë>=40
+	ptime_ = (ptime >= 40) ? ptime : 40;
+	
 	HRESULT hr = lpDSound_->SetCooperativeLevel(GetDesktopWindow(), DSSCL_PRIORITY);
 	if (FAILED(hr))
 	{
@@ -122,7 +123,7 @@ void AudioPlay::inputPcm(const char * data, int len)
 		return;
 	}
 
-	if (recvBuff_.readableBytes() > bufferNotifySize_ * 10)
+	if (recvBuff_.readableBytes() > bufferNotifySize_ * 2)
 	{
 		TRACE("Tooooooooo much data !!!!!\n");
 		recvBuff_.erase();

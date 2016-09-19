@@ -6,6 +6,7 @@
 
 #include "DrawWnd.h"
 #include "Player.h"
+#include "ZSliderCtrl.h"
 #include "base\queue.h"
 
 class CMainFrame : public CFrameWnd, IDrawWndCallback
@@ -42,7 +43,7 @@ public:
 
 protected:  // 控件条嵌入成员
 	CToolBar          m_wndToolBar;
-	CSliderCtrl		  m_slider;
+	ZSliderCtrl		  m_slider;
 	CStatusBar        m_wndStatusBar;
 	CDrawWnd    m_wndView;
 	Player player_;
@@ -68,9 +69,6 @@ public:
 	afx_msg void OnUpdateFilePause(CCmdUI *pCmdUI);
 	afx_msg void OnSeekBackward();
 	afx_msg void OnSeekForward();
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	afx_msg void OnNMReleasedcaptureSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnTRBNThumbPosChangingSeekbar(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnUpdateSeekBackward(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateSeekForward(CCmdUI *pCmdUI);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
@@ -79,6 +77,7 @@ public:
 	afx_msg void OnFrameSave();
 	afx_msg void OnUpdateFrameSave(CCmdUI *pCmdUI);
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
+	afx_msg LRESULT OnSliderChange(WPARAM w, LPARAM l);
 };
 
 

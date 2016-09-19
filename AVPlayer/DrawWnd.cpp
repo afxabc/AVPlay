@@ -14,16 +14,18 @@
 
 IMPLEMENT_DYNAMIC(CDrawWnd, CWnd)
 
+static const int INIT_WIDTH = 765;
+static const int INIT_HEIGHT = 450;
 CDrawWnd::CDrawWnd()
 	: cb_(NULL)
 	, pHandle_(NULL)
 	, scale_(100)
 	, xPos_(0.0f)
 	, yPos_(0.0f)
-	, width_(800)
-	, height_(450)
-	, WIDTH_(800)
-	, HEIGHT_(450)
+	, width_(INIT_WIDTH)
+	, height_(INIT_HEIGHT)
+	, WIDTH_(INIT_WIDTH)
+	, HEIGHT_(INIT_HEIGHT)
 	, rotation_(ROTATION_0)
 	, idHandle_(0)
 	, keyDown_(false)

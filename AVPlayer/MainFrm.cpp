@@ -30,9 +30,6 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PAUSE, &CMainFrame::OnUpdateFilePause)
 	ON_COMMAND(IDC_SEEK_BACKWARD, &CMainFrame::OnSeekBackward)
 	ON_COMMAND(IDC_SEEK_FORWARD, &CMainFrame::OnSeekForward)
-	ON_WM_HSCROLL()
-	ON_NOTIFY(NM_RELEASEDCAPTURE, ID_SEEK_BAR, &CMainFrame::OnNMReleasedcaptureSeekbar)
-	ON_NOTIFY(TRBN_THUMBPOSCHANGING, ID_SEEK_BAR, &CMainFrame::OnTRBNThumbPosChangingSeekbar)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_BACKWARD, &CMainFrame::OnUpdateSeekBackward)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_FORWARD, &CMainFrame::OnUpdateSeekForward)
 	ON_WM_SIZE()
@@ -41,6 +38,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(ID_FRAME_SAVE, &CMainFrame::OnFrameSave)
 	ON_UPDATE_COMMAND_UI(ID_FRAME_SAVE, &CMainFrame::OnUpdateFrameSave)
 	ON_WM_ACTIVATE()
+	ON_MESSAGE(WM_SLIDER_CHANGED, &CMainFrame::OnSliderChange)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -132,7 +130,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_slider.Create(WS_VISIBLE, CRect(0, 0, 10, 10), &m_wndToolBar, ID_SEEK_BAR);
 //	resizeSlider();
-	m_slider.SetRange(0, 100);
+	m_slider.SetRange(0, 0);
 
 	// TODO: 如果不需要可停靠工具栏，则删除这三行
 //	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
@@ -382,28 +380,6 @@ void CMainFrame::OnSeekForward()
 	player_.tickForward();
 }
 
-void CMainFrame::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	__super::OnHScroll(nSBCode, nPos, pScrollBar);
-}
-
-void CMainFrame::OnNMReleasedcaptureSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
-{
-	*pResult = 0;
-	int dts = m_slider.GetPos();
-	player_.seekTime(dts);
-
-	m_wndView.SetFocus();
-}
-
-void CMainFrame::OnTRBNThumbPosChangingSeekbar(NMHDR * pNMHDR, LRESULT * pResult)
-{
-	*pResult = 0;
-}
-
-
 void CMainFrame::OnSize(UINT nType, int cx, int cy)
 {
 	__super::OnSize(nType, cx, cy);
@@ -456,7 +432,6 @@ void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)
 	pCmdUI->Enable(player_.isPlaying());
 }
 
-
 void CMainFrame::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 {
 	__super::OnActivate(nState, pWndOther, bMinimized);
@@ -464,4 +439,19 @@ void CMainFrame::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 	// TODO: 在此处添加消息处理程序代码
 	if (!bMinimized)
 		m_wndView.ReDraw();
+}
+
+LRESULT CMainFrame::OnSliderChange(WPARAM w, LPARAM l)
+{
+	CWnd* pwnd = (CWnd*)l;
+
+	if (pwnd == &m_slider)
+	{
+		int dts = m_slider.GetPos();
+		player_.seekTime(dts);
+	}
+
+	m_wndView.SetFocus();
+	
+	return 0;
 }

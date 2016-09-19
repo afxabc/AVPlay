@@ -347,7 +347,6 @@ void Player::seekFrm()
 	vPending_ = 0;
 	queuePlayV_.clear();
 	queuePlayA_.clear();
-	aPlay_.reset();
 
 	AVPacket packet;
 	av_init_packet(&packet);
@@ -395,6 +394,7 @@ void Player::seekFrm()
 	av_packet_unref(&packet);
 
 	timeBase_ = timeSeek_;
+	aPlay_.reset();
 	sigDecode_.on();
 	sigPlay_.on();
 }

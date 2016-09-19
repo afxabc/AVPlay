@@ -205,6 +205,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="ZSliderCtrl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AudioPlay.cpp" />
@@ -223,6 +224,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ZSliderCtrl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AVPlayer.rc" />
@@ -232,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\AVPlayer.ico" />
+    <Image Include="res\icon1.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
