@@ -39,6 +39,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FRAME_SAVE, &CMainFrame::OnUpdateFrameSave)
 	ON_WM_ACTIVATE()
 	ON_MESSAGE(WM_SLIDER_CHANGED, &CMainFrame::OnSliderChange)
+	ON_MESSAGE(WM_SLIDER_HOVER, &CMainFrame::OnSliderHover)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -129,7 +130,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	m_slider.Create(WS_VISIBLE, CRect(0, 0, 10, 10), &m_wndToolBar, ID_SEEK_BAR);
-//	resizeSlider();
 	m_slider.SetRange(0, 0);
 
 	// TODO: 如果不需要可停靠工具栏，则删除这三行
@@ -148,6 +148,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	fipath_.Trim();
 	if (fipath_.GetLength() > 1)
 		PostMessage(WM_COMMAND, ID_PLAY_START_FILE);
+
+	tooltip_.Create(this);
+	tooltip_.Activate(TRUE);
+	tooltip_.AddTool(&m_slider, "0000");
+	tooltip_.SetDelayTime(100);
 
 	return 0;
 }
@@ -447,11 +452,31 @@ LRESULT CMainFrame::OnSliderChange(WPARAM w, LPARAM l)
 
 	if (pwnd == &m_slider)
 	{
-		int dts = m_slider.GetPos();
-		player_.seekTime(dts);
+		int pos = (int)w;
+		player_.seekTime(pos);
 	}
 
 	m_wndView.SetFocus();
 	
 	return 0;
+}
+
+LRESULT CMainFrame::OnSliderHover(WPARAM w, LPARAM l)
+{
+	CWnd* pwnd = (CWnd*)l;
+
+	if (pwnd == &m_slider)
+	{
+		eko::Timestamp t(w);
+		tooltip_.UpdateTipText(t.toString().c_str(), &m_slider);
+	}
+
+	return 0;
+}
+
+BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	tooltip_.RelayEvent(pMsg);
+	return __super::PreTranslateMessage(pMsg);
 }

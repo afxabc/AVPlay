@@ -50,15 +50,14 @@ protected:  // 控件条嵌入成员
 	CString fipath_;
 	Queue<FrameData> frms_;
 
+	CToolTipCtrl tooltip_;
+
 // 生成的消息映射函数
 protected:
 	bool checkFilePath();
 	void resizeSlider();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSetFocus(CWnd *pOldWnd);
-	DECLARE_MESSAGE_MAP()
-
-public:
 	afx_msg void OnFileOpen();
 	afx_msg void OnFilePlay();
 	afx_msg void OnPlayStartFile();
@@ -78,6 +77,11 @@ public:
 	afx_msg void OnUpdateFrameSave(CCmdUI *pCmdUI);
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 	afx_msg LRESULT OnSliderChange(WPARAM w, LPARAM l);
+	afx_msg LRESULT OnSliderHover(WPARAM w, LPARAM l);
+	DECLARE_MESSAGE_MAP()
+
+public:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 

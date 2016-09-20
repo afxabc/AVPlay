@@ -5,6 +5,7 @@
 #include "AVPlayer.h"
 #include "ZSliderCtrl.h"
 
+#include "base/timestamp.h"
 
 // ZSliderCtrl
 
@@ -14,6 +15,22 @@ ZSliderCtrl::ZSliderCtrl()
 {
 	memDC_.m_hDC = NULL;
 	memBmp_.m_hObject = NULL;
+
+	font_.CreateFont(
+		12,                        // nHeight
+		0,                         // nWidth
+		0,                         // nEscapement
+		0,                         // nOrientation
+		FW_NORMAL,                 // nWeight
+		FALSE,                     // bItalic
+		FALSE,                     // bUnderline
+		0,                         // cStrikeOut
+		DEFAULT_CHARSET,             // nCharSet
+		OUT_DEFAULT_PRECIS,        // nOutPrecision
+		CLIP_DEFAULT_PRECIS,       // nClipPrecision
+		DEFAULT_QUALITY,           // nQuality
+		DEFAULT_PITCH | FF_SWISS,  // nPitchAndFamily
+		"Arial");
 }
 
 ZSliderCtrl::~ZSliderCtrl()
@@ -21,12 +38,14 @@ ZSliderCtrl::~ZSliderCtrl()
 	DestroyDC();
 }
 
-void ZSliderCtrl::SetPos(int pos)
+int ZSliderCtrl::SetPos(int pos)
 {
 	pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
 	pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
 	CSliderCtrl::SetPos(pos);
 	drawPos();
+
+	return pos;
 }
 
 BEGIN_MESSAGE_MAP(ZSliderCtrl, CSliderCtrl)
@@ -74,6 +93,8 @@ void ZSliderCtrl::ResetDC()
 	memBrush_.CreateSolidBrush(GetSysColor(COLOR_3DFACE));
 	memDC_.SelectObject(&memBrush_);
 	memBrushSelect_.CreateSolidBrush(GetSysColor(COLOR_3DHIGHLIGHT));
+
+	memDC_.SelectObject(&font_);
 
 	drawPos();
 }
@@ -164,7 +185,6 @@ void ZSliderCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	ReleaseCapture();
-	tooltip_.Activate(FALSE);
 	memDC_.SelectObject(&memPen_);
 	memDC_.SelectObject(&memBrush_);
 	drawPos();
@@ -182,10 +202,10 @@ void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 		if (line_ > 0 && range_ > 0)
 		{
 			DWORD pos = (point.x - SPAN)*range_ / line_;
-			SetPos(pos);
+			pos = SetPos(pos);
 			AfxGetApp()->GetMainWnd()->PostMessage(WM_SLIDER_CHANGED, pos, (LPARAM)this);
+			showTip(point);
 		}
-		tooltip_.Activate(TRUE);
 	}
 	CSliderCtrl::OnLButtonDown(nFlags, point);
 }
@@ -193,18 +213,36 @@ void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 void ZSliderCtrl::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (GetCapture() == this)
-	{
-		if (line_ > 0 && range_ > 0)
-		{
-			int pos = (point.x - SPAN)*range_ / line_;
-			SetPos(pos);
-			AfxGetApp()->GetMainWnd()->PostMessage(WM_SLIDER_CHANGED, pos, (LPARAM)this);
-		}
-	}
 	CSliderCtrl::OnMouseMove(nFlags, point);
+
+	if (line_ > 0 && range_ > 0)
+	{
+		int pos = (point.x - SPAN)*range_ / line_;
+		pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
+		pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
+		if (GetCapture() == this)
+		{
+				pos = SetPos(pos);
+				AfxGetApp()->GetMainWnd()->PostMessage(WM_SLIDER_CHANGED, pos, (LPARAM)this);
+				showTip(point);
+		}
+		else AfxGetApp()->GetMainWnd()->PostMessage(WM_SLIDER_HOVER, pos, (LPARAM)this);
+	}
 }
 
+void ZSliderCtrl::showTip(CPoint point)
+{
+	/*
+	eko::Timestamp t(GetPos());
+	tooltip_.SetWindowText(t.toString().c_str());
+	point.y = height_ / 2;
+	point.x -= TIP_WIDTH;
+	this->ClientToScreen(&point);
+	AfxGetApp()->GetMainWnd()->ScreenToClient(&point);
+	tooltip_.MoveWindow(point.x, point.y, TIP_WIDTH, TIP_HEIGHT);
+	tooltip_.SetWindowPos(&CWnd::wndTopMost, point.x, 0, TIP_WIDTH, TIP_HEIGHT, SWP_FRAMECHANGED | SWP_DRAWFRAME);
+	*/
+}
 
 int ZSliderCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -212,9 +250,8 @@ int ZSliderCtrl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// TODO:  在此添加您专用的创建代码
-	tooltip_.Create(this);
-	tooltip_.SetDelayTime(0);
-	this->SetToolTips(&tooltip_);
+//	tooltip_.Create(NULL, "Hello",  SS_CENTER| SS_CENTERIMAGE, CRect(0,0, TIP_WIDTH, TIP_HEIGHT), AfxGetApp()->GetMainWnd(), 0xffffffff);
+//	tooltip_.SetFont(&font_);
 
 	return 0;
 }

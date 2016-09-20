@@ -3,7 +3,8 @@
 
 // ZSliderCtrl
 #define WM_SLIDER_CHANGED WM_USER+1010
-#define WM_SLIDER_SELECTED WM_USER+1011
+#define WM_SLIDER_SELECTED WM_SLIDER_CHANGED+1
+#define WM_SLIDER_HOVER WM_SLIDER_CHANGED+2
 
 class ZSliderCtrl : public CSliderCtrl
 {
@@ -12,7 +13,7 @@ class ZSliderCtrl : public CSliderCtrl
 public:
 	ZSliderCtrl();
 	virtual ~ZSliderCtrl();
-	void SetPos(int pos);
+	int SetPos(int pos);
 
 protected:
 	void ResetDC();
@@ -23,6 +24,8 @@ protected:
 	{
 		return (memDC_.m_hDC != NULL);
 	}
+
+	void showTip(CPoint point);
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -46,7 +49,7 @@ protected:
 	CBitmap memBmp_;
 	CDC memBkDC_;
 	CBitmap memBkBmp_;
-	CToolTipCtrl tooltip_;
+	CFont font_;
 
 	static const int SPAN = 10;
 
