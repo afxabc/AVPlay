@@ -63,6 +63,9 @@
     <ClInclude Include="ZSliderCtrl.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="VolumeDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AVPlayer.cpp">
@@ -99,6 +102,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ZSliderCtrl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="VolumeDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

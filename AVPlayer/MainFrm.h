@@ -6,6 +6,7 @@
 
 #include "DrawWnd.h"
 #include "Player.h"
+#include "VolumeDlg.h"
 #include "ZSliderCtrl.h"
 #include "base\queue.h"
 
@@ -46,7 +47,8 @@ protected:  // 控件条嵌入成员
 	ZSliderCtrl		  m_slider;
 	CStatusBar        m_wndStatusBar;
 	CDrawWnd    m_wndView;
-	Player player_;
+	Player player_; 
+	CVolumeDlg volDlg_;
 	CString fipath_;
 	Queue<FrameData> frms_;
 
@@ -71,6 +73,7 @@ protected:
 	afx_msg void OnUpdateSeekBackward(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateSeekForward(CCmdUI *pCmdUI);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnVolume();
 	afx_msg void OnVolumeDown();
 	afx_msg void OnVolumeUp();
 	afx_msg void OnFrameSave();
@@ -82,6 +85,7 @@ protected:
 
 public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnUpdateVolume(CCmdUI *pCmdUI);
 };
 
 

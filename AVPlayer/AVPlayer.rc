@@ -94,8 +94,7 @@ BEGIN
     SEPARATOR
     BUTTON      ID_FRAME_SAVE
     SEPARATOR
-    BUTTON      ID_VOLUME_DOWN
-    BUTTON      ID_VOLUME_UP
+    BUTTON      ID_VOLUME_BAR
     SEPARATOR
     BUTTON      ID_SEEK_BAR
 END
@@ -191,6 +190,14 @@ BEGIN
     CONTROL         "",IDC_SLIDER2,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,7,40,100,15
 END
 
+IDD_VOLUME_DLG DIALOGEX 0, 0, 30, 105
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CTEXT           "99",IDC_VOL_VALUE,5,87,18,11,SS_CENTERIMAGE | SS_SUNKEN
+    CONTROL         "",IDC_SLIDER_VOLUME,"msctls_trackbar32",TBS_VERT | TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,5,7,18,77
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -246,6 +253,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 55
     END
+
+    IDD_VOLUME_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 5
+        RIGHTMARGIN, 23
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 98
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -256,6 +271,11 @@ END
 //
 
 IDD_ABOUTBOX AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_VOLUME_DLG AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
@@ -362,6 +382,7 @@ BEGIN
     ID_FILE_PAUSE           "暂停\n暂停"
     IDC_SEEK_FORWARD        "向前步进\n向前步进"
     IDC_SEEK_BACKWARD       "向后步进\n向后步进"
+    ID_VOLUME_BAR           "声音\n声音"
 END
 
 STRINGTABLE

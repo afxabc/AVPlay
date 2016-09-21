@@ -7,7 +7,11 @@
 #define IDR_MAINFRAME                   128
 #define IDR_AVPlayerTYPE                130
 #define IDC_RESET_DEVICE                310
+#define IDD_VOLUME_DLG                  312
 #define IDC_SLIDER2                     1002
+#define IDC_VOL_VALUE                   1003
+#define IDC_SLIDER1                     1005
+#define IDC_SLIDER_VOLUME               1005
 #define ID_FILE_PLAY                    32771
 #define IDC_ZOOM_IN                     32774
 #define IDC_ZOOM_OUT                    32776
@@ -35,9 +39,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        312
+#define _APS_NEXT_RESOURCE_VALUE        314
 #define _APS_NEXT_COMMAND_VALUE         32807
-#define _APS_NEXT_CONTROL_VALUE         1003
+#define _APS_NEXT_CONTROL_VALUE         1006
 #define _APS_NEXT_SYMED_VALUE           311
 #endif
 #endif

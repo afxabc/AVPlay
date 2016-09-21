@@ -4,7 +4,6 @@
 
 #include "stdafx.h"
 #include "AVPlayer.h"
-
 #include "MainFrm.h"
 
 #include "base\astring.h"
@@ -33,6 +32,8 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_BACKWARD, &CMainFrame::OnUpdateSeekBackward)
 	ON_UPDATE_COMMAND_UI(IDC_SEEK_FORWARD, &CMainFrame::OnUpdateSeekForward)
 	ON_WM_SIZE()
+	ON_COMMAND(ID_VOLUME_BAR, &CMainFrame::OnVolume)
+	ON_UPDATE_COMMAND_UI(ID_VOLUME_BAR, &CMainFrame::OnUpdateVolume)
 	ON_COMMAND(ID_VOLUME_DOWN, &CMainFrame::OnVolumeDown)
 	ON_COMMAND(ID_VOLUME_UP, &CMainFrame::OnVolumeUp)
 	ON_COMMAND(ID_FRAME_SAVE, &CMainFrame::OnFrameSave)
@@ -153,6 +154,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	tooltip_.Activate(TRUE);
 	tooltip_.AddTool(&m_slider, "0000");
 	tooltip_.SetDelayTime(100);
+
+	volDlg_.Create(&player_, this);
 
 	return 0;
 }
@@ -393,6 +396,35 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	resizeSlider();
 }
 
+void CMainFrame::OnUpdateVolume(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->SetCheck(volDlg_.IsWindowVisible());
+}
+
+void CMainFrame::OnVolume()
+{
+	// TODO: 在此添加命令处理程序代码
+
+	int index = m_wndToolBar.CommandToIndex(ID_VOLUME_BAR);
+	RECT rect;
+	m_wndToolBar.GetItemRect(index, &rect);
+	m_wndToolBar. ClientToScreen(&rect);
+
+	RECT r;
+	volDlg_.GetWindowRect(&r);
+	int w = r.right - r.left;
+	int h = r.bottom - r.top;
+
+	r.left = rect.left;
+	r.top = rect.top - h;
+	r.right = rect.left + w;
+	r.bottom = rect.top;
+
+	volDlg_.MoveWindow(&r, FALSE);
+	volDlg_.ShowWindow(SW_SHOW);
+}
+
 void CMainFrame::OnVolumeDown()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -480,3 +512,4 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	tooltip_.RelayEvent(pMsg);
 	return __super::PreTranslateMessage(pMsg);
 }
+
