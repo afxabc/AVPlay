@@ -123,7 +123,7 @@ void AudioPlay::inputPcm(const char * data, int len)
 		return;
 	}
 
-	if (recvBuff_.readableBytes() > bufferNotifySize_ * 2)
+	if (recvBuff_.readableBytes() > bufferNotifySize_ * 10)
 	{
 		TRACE("Tooooooooo much data !!!!!\n");
 		recvBuff_.erase();
@@ -138,7 +138,7 @@ void AudioPlay::inputPcm(const char * data, int len)
 	BYTE* buf = (BYTE*)recvBuff_.beginRead();
 	tmp.pushBack((char*)buf, matchSize);
 
-	if (playQueue_.size() > 10)
+	if (playQueue_.size() > 2)
 	{
 		TRACE("Tooooooooo much in queue !!!!!\n");
 		playQueue_.clear();
@@ -154,7 +154,7 @@ void AudioPlay::reset()
 	recvBuff_.erase();
 }
 
-DWORD AudioPlay::setVolume(DWORD vol)
+int AudioPlay::setVolume(int vol)
 {
 	if (!started_ || pDSB8_ == NULL)
 		return vol_;
@@ -171,7 +171,7 @@ DWORD AudioPlay::setVolume(DWORD vol)
 	return vol_;
 }
 
-DWORD AudioPlay::getVolume()
+int AudioPlay::getVolume()
 {
 	return vol_;
 }

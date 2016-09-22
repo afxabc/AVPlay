@@ -7,6 +7,7 @@ class IDrawWndCallback
 {
 public:
 	virtual void OnResetSize(int width, int height) = 0;
+	virtual void OnResetSizeFullScreen(int width, int height) = 0;
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
 };
 
@@ -81,6 +82,8 @@ protected:
 	FrameData frmBak_;
 	bool keyDown_;
 
+	CFrameWnd* parent_;
+
 protected:
 	DECLARE_MESSAGE_MAP()
 
@@ -88,6 +91,9 @@ protected:
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg void OnWindowFit();
+	afx_msg void OnFullScreen();
+	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -105,9 +111,6 @@ protected:
 	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
-public:
-	afx_msg void OnWindowFit();
-	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 };
 
 

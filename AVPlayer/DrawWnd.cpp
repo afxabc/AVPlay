@@ -113,6 +113,8 @@ int CDrawWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	OnDrawWndHandle(IDC_SHOW_D3DSPIRIT);
 
+	parent_ = (CFrameWnd*)GetParent();
+
 	return 0;
 }
 
@@ -197,9 +199,8 @@ void CDrawWnd::OnZoomIn()
 {
 	// TODO: 在此添加命令处理程序代码
 	int SPAN = (scale_>=250) ? 50 :((scale_<100) ? 5 : 10);
-	scale_ += SPAN;
-	if (scale_ > 500)
-		scale_ = 500;
+	if (scale_ < 500)
+		scale_ += SPAN;
 	UpdateCoordinate(TRUE);
 }
 
@@ -207,9 +208,8 @@ void CDrawWnd::OnZoomOut()
 {
 	// TODO: 在此添加命令处理程序代码
 	int SPAN = (scale_>250) ? 50 : ((scale_<100) ? 5 : 10);
-	scale_ -= SPAN;
-	if (scale_ < 10)
-		scale_ = 10;
+	if (scale_ > 20)
+		scale_ -= SPAN;
 	UpdateCoordinate(TRUE);
 }
 
@@ -226,9 +226,41 @@ void CDrawWnd::OnInitSize()
 		cb_->OnResetSize(width_, height_);
 }
 
+void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnLButtonDblClk(nFlags, point);
+
+	int full_x = GetSystemMetrics(SM_CXSCREEN);
+	int full_y = GetSystemMetrics(SM_CYSCREEN);
+	RECT r;
+	this->GetClientRect(&r);
+
+	rotation_ = ROTATION_0;
+	if (this->GetParent() != parent_)
+	{
+		scale_ = 100;
+		SetParent(parent_);
+		SetWindowPos(&CWnd::wndBottom, 0, 0, width_, height_, 0);
+		parent_->RecalcLayout(1);
+		OnWindowFit();
+	}
+	else OnFullScreen();
+}
+
+void CDrawWnd::OnMButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CWnd::OnMButtonUp(nFlags, point);
+	OnWindowFit();
+}
+
 void CDrawWnd::OnWindowFit()
 {
 	// TODO: 在此添加命令处理程序代码
+
+	if (this->GetParent() != AfxGetApp()->GetMainWnd())
+		return;
 
 	xPos_ = 0;
 	yPos_ = 0;
@@ -240,22 +272,29 @@ void CDrawWnd::OnWindowFit()
 		cb_->OnResetSize(width*scale_/100, height*scale_/100);
 }
 
+void CDrawWnd::OnFullScreen()
+{
+	int full_x = GetSystemMetrics(SM_CXSCREEN);
+	int full_y = GetSystemMetrics(SM_CYSCREEN);
+
+	float scalex = (float)full_x * 100 / width_;
+	float scaley = (float)full_y * 100 / height_;
+
+	xPos_ = 0;
+	yPos_ = 0;
+	scale_ = (scalex > scaley) ? scaley : scalex;
+
+	SetParent(NULL);
+	SetWindowPos(&CWnd::wndTopMost, 0, 0, full_x, full_y, 0);
+	UpdateCoordinate(TRUE);
+	this->SetFocus();
+}
+
 void CDrawWnd::OnResetDevice()
 {
 	if (pHandle_ == NULL)
 		return;
 
-	UpdateCoordinate(TRUE);
-}
-
-void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	CWnd::OnLButtonDblClk(nFlags, point);
-
-	xPos_ = 0;
-	yPos_ = 0;
-	scale_ = 100;
 	UpdateCoordinate(TRUE);
 }
 
@@ -311,15 +350,27 @@ void CDrawWnd::OnUpdateShowVertex(CCmdUI * pCmdUI)
 void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (nChar == VK_SPACE && !keyDown_)
+	switch (nChar)
 	{
-		keyDown_ = true;
-		GetParent()->PostMessage(WM_COMMAND, ID_FILE_PAUSE);
+	case VK_SPACE:
+		if (!keyDown_)
+			parent_->PostMessage(WM_COMMAND, ID_FILE_PAUSE);
+		break;
+	case VK_RIGHT:
+		parent_->PostMessage(WM_COMMAND, IDC_SEEK_FORWARD);
+		break;
+	case VK_LEFT:
+		parent_->PostMessage(WM_COMMAND, IDC_SEEK_BACKWARD);
+		break;
+	case VK_UP:
+		parent_->PostMessage(WM_COMMAND, ID_VOLUME_UP);
+		break;
+	case VK_DOWN:
+		parent_->PostMessage(WM_COMMAND, ID_VOLUME_DOWN);
+		break;
 	}
-	else if (nChar == VK_RIGHT)
-		GetParent()->PostMessage(WM_COMMAND, IDC_SEEK_FORWARD);
-	else if (nChar == VK_LEFT)
-		GetParent()->PostMessage(WM_COMMAND, IDC_SEEK_BACKWARD);
+
+	keyDown_ = true;
 
 	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
 }
@@ -327,15 +378,7 @@ void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CDrawWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (nChar == ' ')
-		keyDown_ = false;
+	keyDown_ = false;
 	CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
 }
 
-
-void CDrawWnd::OnMButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	OnWindowFit();
-	CWnd::OnMButtonUp(nFlags, point);
-}

@@ -56,6 +56,7 @@ static UINT indicators[] =
 
 CMainFrame::CMainFrame(LPCTSTR fipath)
 	: fipath_(fipath)
+	, frmSize_(-1, -1)
 {
 	// TODO: 在此添加成员初始化代码
 }
@@ -67,26 +68,43 @@ CMainFrame::~CMainFrame()
 
 void CMainFrame::OnResetSize(int width, int height)
 {
-	CRect rChild;
-	m_wndView.GetClientRect(&rChild);
-	int dWidth = width - rChild.Width();
-	int dHeight = height - rChild.Height();
-
-	RECT rMain;
+	CRect rMain;
 	this->GetWindowRect(&rMain);
-	rMain.right += dWidth;
-	rMain.bottom += dHeight;
 
-	int WIDTH = GetSystemMetrics(SM_CXSCREEN);
-	int HEIGHT = GetSystemMetrics(SM_CYSCREEN);
-
-	if (WIDTH > (rMain.right - rMain.left) && HEIGHT > (rMain.bottom - rMain.top))
+	if (frmSize_.cx < 0 && frmSize_.cy < 0)
 	{
-		this->MoveWindow(&rMain);
-		this->CenterWindow();
+		CRect rChild;
+		m_wndView.GetWindowRect(&rChild);
+		frmSize_.cx = rMain.Width() - rChild.Width();
+		frmSize_.cy = rMain.Height() - rChild.Height();
 	}
-	else this->ShowWindow(SW_MAXIMIZE);
-	
+
+	rMain.right = rMain.left+frmSize_.cx+width;
+	rMain.bottom = rMain.top+frmSize_.cy+height;
+
+	RECT rDesktop;
+	::SystemParametersInfo(SPI_GETWORKAREA, 0, &rDesktop, 0);   // 获得工作区大小
+	int WIDTH = rDesktop.right;	// GetSystemMetrics(SM_CXSCREEN);
+	int HEIGHT = rDesktop.bottom;	// GetSystemMetrics(SM_CYSCREEN);
+
+	if (rMain.Width() > WIDTH)
+	{
+		rMain.left = 0;
+		rMain.right = WIDTH;
+	}
+
+	if (rMain.Height() > HEIGHT)
+	{
+		rMain.top = 0;
+		rMain.bottom = HEIGHT;
+	}
+
+	this->MoveWindow(&rMain);
+	this->CenterWindow();
+}
+
+void CMainFrame::OnResetSizeFullScreen(int width, int height)
+{
 }
 
 void CMainFrame::ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
@@ -428,15 +446,15 @@ void CMainFrame::OnVolume()
 void CMainFrame::OnVolumeDown()
 {
 	// TODO: 在此添加命令处理程序代码
-	DWORD vol = player_.getVolume();
-	player_.setVolume(vol - 5);
+	int vol = player_.getVolume();
+	player_.setVolume(vol - 1);
 }
 
 void CMainFrame::OnVolumeUp()
 {
 	// TODO: 在此添加命令处理程序代码
-	DWORD vol = player_.getVolume();
-	player_.setVolume(vol + 5);
+	int vol = player_.getVolume();
+	player_.setVolume(vol + 1);
 }
 
 void CMainFrame::OnFrameSave()

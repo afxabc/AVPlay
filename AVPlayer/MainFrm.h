@@ -20,7 +20,8 @@ protected:
 
 // 特性
 public:
-	virtual void OnResetSize(int width, int height);
+	virtual void OnResetSize(int width, int height); 
+	virtual void OnResetSizeFullScreen(int width, int height);
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 
 // 操作
@@ -47,6 +48,7 @@ protected:  // 控件条嵌入成员
 	ZSliderCtrl		  m_slider;
 	CStatusBar        m_wndStatusBar;
 	CDrawWnd    m_wndView;
+	CSize	frmSize_;
 	Player player_; 
 	CVolumeDlg volDlg_;
 	CString fipath_;

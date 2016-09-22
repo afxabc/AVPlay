@@ -100,8 +100,8 @@ public:
 
 	void onTimer();
 
-	DWORD setVolume(DWORD vol) { return aPlay_.setVolume(vol); }
-	DWORD getVolume() { return aPlay_.getVolume(); }
+	int setVolume(int vol) { return aPlay_.setVolume(vol); }
+	int getVolume() { return aPlay_.getVolume(); }
 
 	void decodeLoop();
 	void seekLoop();
