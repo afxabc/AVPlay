@@ -105,7 +105,6 @@ public:
 	int getVolume() { return aPlay_.getVolume(); }
 
 	void decodeLoop();
-	void seekLoop();
 	void playLoop();
 
 private:
@@ -148,16 +147,12 @@ private:
 
 	static const int TIMER = 10;
 	mutable Mutex mutex_;
-	bool paused_;
+	std::atomic_bool paused_;
 	std::atomic_bool seeked_;
-	std::atomic_bool ticked_;
 	Queue<int64_t> seekQueue_;
 
 	Thread thDecode_;
 	Signal sigDecode_;
-
-	Thread thSeek_;
-	Signal sigSeek_;
 
 	mutable Mutex mutexPts_;
 	Thread thPlay_;

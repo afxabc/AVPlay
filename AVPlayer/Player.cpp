@@ -70,7 +70,6 @@ Player::Player()
 	, q2d_(0.0)
 	, paused_(true)
 	, seeked_(true)
-	, ticked_(true)
 	, timeTotal_(0)
 	, vPending_(0)
 	, aPending_(0)
@@ -170,16 +169,11 @@ bool Player::startPlay(const char* finame)
 
 	return (thDecode_.start([this]() {this->decodeLoop(); })
 		&& thPlay_.start([this]() {this->playLoop(); })
-		&& thSeek_.start([this]() {this->seekLoop(); })
 		);
 }
 
 void Player::closeInput()
 {
-	sigSeek_.on();
-	if (thSeek_.started())
-		thSeek_.stop();
-
 	if (swsContext_)
 		sws_freeContext(swsContext_), swsContext_ = NULL;
 
@@ -235,10 +229,7 @@ static void CALLBACK TimerProc(UINT uiID, UINT uiMsg, DWORD dwUser, DWORD dw1, D
 void Player::tickForward()
 {
 	paused_ = true;
-	Lock lock(mutex_);
 
-//	timeBase_ += TIMER+ TIMER;
-//	timeBase_ = timeDtsV_ + TIMER;
 	timeBase_ = timePts_ + TIMER;
 	if (timeBase_ > timeTotal_)
 		timeBase_ = timeTotal_;
@@ -261,10 +252,9 @@ void Player::onTimer()
 	if (paused_ || (seekQueue_.size() > 0))
 		return;
 
-	Lock lock(mutex_);
-
 	if (timeBase_ < timeTotal_)
 		timeBase_ += TIMER;
+
 	sigDecode_.on();
 	sigPlay_.on();
 }
@@ -376,7 +366,7 @@ void Player::decodeAudio(AVPacket & packet)
 		{
 			FrameData frmOut;
 
-			timeDtsA_ = packet.pts*av_q2d(pFormatCtx_->streams[audioindex_]->time_base) * 1000- 500;
+			timeDtsA_ = packet.pts*av_q2d(pFormatCtx_->streams[audioindex_]->time_base) * 1000;
 
 			frmOut.type_ = FRAME_AUDIO;
 			frmOut.tm_ = timeDtsA_;
@@ -406,8 +396,6 @@ void Player::seekFrm()
 	if (seekQueue_.size() <= 0)
 		return;
 
-	ticked_ = false;
-
 	{
 		Lock lock(mutex_);
 		seekQueue_.getBack(timeSeek_);
@@ -430,7 +418,6 @@ void Player::seekFrm()
 
 	if (seek_ret < 0)
 	{
-		ticked_ = true;
 		return;
 	}
 
@@ -489,7 +476,6 @@ void Player::seekFrm()
 		sigPlay_.on();
 	}
 
-	ticked_ = true;
 }
 
 void Player::decodeLoop()
@@ -504,7 +490,6 @@ void Player::decodeLoop()
 	timePts_ = 0;
 	vPending_ = 0;
 	aPending_ = 0;
-	ticked_ = true;
 
 	seekQueue_.clear();
 
@@ -520,8 +505,6 @@ void Player::decodeLoop()
 	{
 		if (seekQueue_.size() <= 0)
 		{
-			Lock lock(mutex_);
-
 			end = false;
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
 			{
@@ -547,7 +530,7 @@ void Player::decodeLoop()
 		//	int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
 			int64_t tmMin = timeDtsV_;
 		//	if (tmMin <= timeBase_+2000 && !end)
-			if ((queuePlayV_.size() <= 60 && !end) || seekQueue_.size()>0)
+			if ((queuePlayV_.size() <= 60 && queuePlayA_.size() <= 60 && !end) || seekQueue_.size()>0)
 				break;
 			//LOGW("++++++ wait...v=%d, a=%d, B=%d , qV=%d, qA=%d++++++", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_,
 			//	queuePlayV_.size(), queuePlayA_.size());
@@ -561,17 +544,6 @@ void Player::decodeLoop()
 	mRes = ::timeKillEvent(mRes);
 
 	LOGW("+++++++++++++++ decodeLoop quit. +++++++++++++++");
-}
-
-void Player::seekLoop()
-{
-	sigSeek_.off();
-	while (thSeek_.started())
-	{
-		sigSeek_.wait(500);
-	//	seekFrm();
-	}
-	LOGW("################ seekLoop quit. ################");
 }
 
 void Player::playLoop()
@@ -589,30 +561,38 @@ void Player::playLoop()
 
 		timePts_ = 0;
 		span = 0;
+		int tmbase = (int)timeBase_;
+
 		if (queuePlayV_.peerFront(when))
 		{
+			if (queuePlayV_.size() > 70)
+				LOGW("!!!!!! queuePlayV_.size() --- %d", (int)queuePlayV_.size());
+
 			timePts_ = when;
-			if (when <= timeBase_ && queuePlayV_.getFront(frm))
+			if ((int)when <= tmbase && queuePlayV_.getFront(frm))
 			{
-	//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
+			//	LOGW("%d<=%d --- %d", (int)when, tmbase, (int)queuePlayV_.size());
 				vPending_--;
 				decodeFinish_(frm);
 				gotFrm = true;
 			}
-			else span = (when - timeBase_);
+			else span = (when - tmbase);
 		}
 
 		if (queuePlayA_.peerFront(when))
 		{
-			if (when <= timeBase_ && queuePlayA_.getFront(frm))
+			if (queuePlayA_.size() > 70)
+				LOGW("?????? queuePlayA_.size() --- %d", (int)queuePlayA_.size());
+
+			if (when <= tmbase && queuePlayA_.getFront(frm))
 			{
 	//			LOGW("%d ===  ===  --- %d", (int)when, frm.size_);
 				aPending_--;
 				if (!aPlay_.inputPcm((char*)frm.data_, frm.size_))
-					LOGW("%d === %d ---- qV=%d, qA=%d", (int)when, frm.size_, queuePlayV_.size(), queuePlayA_.size());
+					LOGW("%d === %d ---- qV=%d, qA=%d", (int)when, tmbase, queuePlayV_.size(), queuePlayA_.size());
 				gotFrm = true;
 			}
-			else span = ((when - timeBase_) > span)?span:(when - timeBase_);
+			else span = ((when - tmbase) > span)?span:(when - tmbase);
 		}
 			
 		if (!gotFrm)
