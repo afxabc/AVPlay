@@ -70,6 +70,7 @@ Player::Player()
 	, q2d_(0.0)
 	, paused_(true)
 	, seeked_(true)
+	, ticked_(true)
 	, timeTotal_(0)
 	, vPending_(0)
 	, aPending_(0)
@@ -239,6 +240,9 @@ void Player::tickForward()
 //	timeBase_ += TIMER+ TIMER;
 //	timeBase_ = timeDtsV_ + TIMER;
 	timeBase_ = timePts_ + TIMER;
+	if (timeBase_ > timeTotal_)
+		timeBase_ = timeTotal_;
+
 	sigDecode_.on();
 	sigPlay_.on();
 }
@@ -254,12 +258,13 @@ void Player::seekReset()
 
 void Player::onTimer()
 {
-	if (paused_ || seeked_ )
+	if (paused_ || (seekQueue_.size() > 0))
 		return;
 
 	Lock lock(mutex_);
 
-	timeBase_ += TIMER;
+	if (timeBase_ < timeTotal_)
+		timeBase_ += TIMER;
 	sigDecode_.on();
 	sigPlay_.on();
 }
@@ -325,87 +330,6 @@ int64_t Player::createFrm(int64_t dts)
 	//decodeFinish_(frmOut);
 
 	return dts;
-}
-
-void Player::seekFrm()
-{
-	if (!seeked_)
-		return;
-	seeked_ = false;
-
-	Lock lock(mutex_);
-	if (timeSeek_ > timeTotal_ - TIMER)
-		timeSeek_ = timeTotal_ - TIMER;
-
-	double seekTm = (double)timeSeek_ / (1000 * q2d_);
-
-	int seek_ret = 0;
-	if (timeSeek_ > timeDtsV_)
-	{
-		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
-		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
-	}
-	else 
-		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
-
-	if (seek_ret < 0)
-	{
-		seeked_ = false;
-		return;
-	}
-
-
-	AVPacket packet;
-	av_init_packet(&packet);
-
-	seekReset();
-
-	bool get1 = false;
-	int64_t dts = 0;
-	while (!seeked_)
-	{
-		if (av_read_frame(pFormatCtx_, &packet) < 0)
-		{
-			if (get1)
-			{
-				timeSeek_ = dts * q2d_ * 1000;
-				createFrm(dts);
-			}
-
-			LOGW("*** seek last frame got=%d ***", get1);
-			break;
-		}
-
-		if (videoindex_ != packet.stream_index)
-		{
-			av_packet_unref(&packet);
-			continue;
-		}
-
-		dts = decodeVideo(packet);
-		av_packet_unref(&packet);
-
-		if (dts < 0)
-		{
-			LOGW("*** decodeVideo failed=%d !!! ***", dts);
-			break;
-		}
-		else get1 = true;
-
-		if (dts * q2d_ * 1000 >= timeSeek_)
-		{
-			timeSeek_ = dts * q2d_ * 1000;
-			createFrm(dts);
-			break;
-		}
-	}
-
-	av_packet_unref(&packet);
-
-	timeDtsV_ = timeBase_ = timeSeek_;
-	sigDecode_.on();
-	sigPlay_.on();
-
 }
 
 void Player::decodeAudio(AVPacket & packet)
@@ -477,6 +401,97 @@ void Player::decodeAudio(AVPacket & packet)
 	av_packet_unref(&packet);
 }
 
+void Player::seekFrm()
+{
+	if (seekQueue_.size() <= 0)
+		return;
+
+	ticked_ = false;
+
+	{
+		Lock lock(mutex_);
+		seekQueue_.getBack(timeSeek_);
+		seekQueue_.clear();
+	}
+
+	if (timeSeek_ > timeTotal_ - TIMER)
+		timeSeek_ = timeTotal_ - TIMER;
+
+	double seekTm = (double)timeSeek_ / (1000 * q2d_);
+
+	int seek_ret = 0;
+	if (timeSeek_ > timeDtsV_)
+	{
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm, 0);
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
+	}
+	else
+		seek_ret = av_seek_frame(pFormatCtx_, videoindex_, seekTm - TIMER, AVSEEK_FLAG_BACKWARD);
+
+	if (seek_ret < 0)
+	{
+		ticked_ = true;
+		return;
+	}
+
+
+	AVPacket packet;
+	av_init_packet(&packet);
+
+
+	bool get1 = false;
+	int64_t dts = 0;
+	while (thDecode_.started())
+	{
+		if (seekQueue_.size() > 0)
+		{
+			LOGW("*** new seek income !!! =%d ***", seekQueue_.size());
+			break;
+		}
+
+		if (av_read_frame(pFormatCtx_, &packet) < 0)
+		{
+			LOGW("*** seek last frame got=%d ***", get1);
+			break;
+		}
+
+		if (videoindex_ != packet.stream_index)
+		{
+			av_packet_unref(&packet);
+			continue;
+		}
+
+		dts = decodeVideo(packet);
+
+		if (dts < 0)
+		{
+			LOGW("*** decodeVideo failed=%d !!! ***", dts);
+			continue;
+		}
+		else
+		{
+			get1 = true;
+		}
+
+		if (dts * q2d_ * 1000 >= timeSeek_)
+		{
+			break;
+		}
+	}
+
+	av_packet_unref(&packet);
+
+	if (get1)
+	{
+		seekReset();
+		timeBase_ = timeSeek_ = dts * q2d_ * 1000;
+		createFrm(dts);
+		sigPlay_.on();
+	}
+
+	ticked_ = true;
+}
+
 void Player::decodeLoop()
 {
 	AVPacket packet;
@@ -489,6 +504,10 @@ void Player::decodeLoop()
 	timePts_ = 0;
 	vPending_ = 0;
 	aPending_ = 0;
+	ticked_ = true;
+
+	seekQueue_.clear();
+
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
 	sigDecode_.off();
@@ -499,7 +518,7 @@ void Player::decodeLoop()
 	bool end = false;
 	while (thDecode_.started())
 	{
-		if (!seeked_)
+		if (seekQueue_.size() <= 0)
 		{
 			Lock lock(mutex_);
 
@@ -508,7 +527,7 @@ void Player::decodeLoop()
 			{
 			//	paused_ = true;
 				end = true;
-				timeBase_ = timeTotal_;
+			//	timeBase_ = timeDtsV_;
 			}
 			else if (videoindex_ == packet.stream_index)
 			{
@@ -528,11 +547,11 @@ void Player::decodeLoop()
 		//	int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
 			int64_t tmMin = timeDtsV_;
 		//	if (tmMin <= timeBase_+2000 && !end)
-			if ((queuePlayV_.size() <= 60 && !end) || seeked_)
+			if ((queuePlayV_.size() <= 60 && !end) || seekQueue_.size()>0)
 				break;
 			//LOGW("++++++ wait...v=%d, a=%d, B=%d , qV=%d, qA=%d++++++", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_,
 			//	queuePlayV_.size(), queuePlayA_.size());
-			sigDecode_.wait();
+			sigDecode_.wait(100);
 			end = false;
 		}
 	}

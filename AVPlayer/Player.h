@@ -85,8 +85,8 @@ public:
 	void seekTime(int64_t ms)
 	{
 		seeked_ = true;
-		timeSeek_ = (ms<0)?0:ms;
-		sigSeek_.on();
+		Lock lock(mutex_);
+		seekQueue_.putBack((ms < 0) ? 0 : ms);
 	}
 
 	int64_t getTime()
@@ -140,7 +140,7 @@ private:
 	double  q2d_;
 
 	int64_t		timeTotal_;
-	int64_t		timeBase_;
+	std::atomic_int64_t		timeBase_;
 	int64_t		timeSeek_;
 	int64_t		timeDtsV_;
 	int64_t		timeDtsA_;
@@ -150,6 +150,8 @@ private:
 	mutable Mutex mutex_;
 	bool paused_;
 	std::atomic_bool seeked_;
+	std::atomic_bool ticked_;
+	Queue<int64_t> seekQueue_;
 
 	Thread thDecode_;
 	Signal sigDecode_;

@@ -193,6 +193,7 @@ void CDrawWnd::OnRotateAngle()
 	// TODO: 在此添加命令处理程序代码
 	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
 	UpdateCoordinate(TRUE);
+	OnWindowFit();
 }
 
 void CDrawWnd::OnZoomIn()
