@@ -22,7 +22,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_COMMAND(ID_FILE_OPEN, &CMainFrame::OnFileOpen)
 	ON_COMMAND(ID_FILE_PLAY, &CMainFrame::OnFilePlay)
 	ON_COMMAND(ID_PLAY_START_FILE, &CMainFrame::OnPlayStartFile)
-	ON_COMMAND(IDOK, &CMainFrame::OnDrawFrame)
+	ON_COMMAND(IDC_DRAW_FRAME, &CMainFrame::OnDrawFrame)
 	ON_UPDATE_COMMAND_UI(ID_FILE_PLAY, &CMainFrame::OnUpdateFilePlay)
 	ON_WM_CLOSE()
 	ON_COMMAND(ID_FILE_PAUSE, &CMainFrame::OnFilePause)
@@ -57,6 +57,7 @@ static UINT indicators[] =
 CMainFrame::CMainFrame(LPCTSTR fipath)
 	: fipath_(fipath)
 	, frmSize_(-1, -1)
+	, cmdPending_(0)
 {
 	// TODO: 在此添加成员初始化代码
 }
@@ -229,11 +230,41 @@ void CMainFrame::onFrameData(FrameData frm)
 	if (frms_.size() >= MAX_QUEUE_SIZE)
 	{
 		LOGW("onFrameData : queue fulled !!!!!!");
-		return;
+		frms_.clear();
+//		return;
 	}
 		
 	frms_.putBack(frm);
-	this->PostMessage(WM_COMMAND, IDOK);
+	if (cmdPending_ <= 2)
+	{
+		cmdPending_++;
+		this->PostMessage(WM_COMMAND, IDC_DRAW_FRAME);
+	}
+		
+}
+
+void CMainFrame::OnDrawFrame()
+{
+	cmdPending_--;
+	if (frms_.size() < 1)
+	{
+		//		LOGW("没有解压帧！！");
+		return;
+	}
+
+	FrameData f;
+	while (frms_.getFront(f))
+	{
+		m_wndView.DrawFrame(f);
+	}
+
+	if (GetCapture() != &m_slider)
+		m_slider.SetPos(f.tm_);
+
+	Timestamp tm = Timestamp(f.tm_);
+	CString str;
+	str.Format("%s", tm.toString().c_str());
+	m_wndStatusBar.SetPaneText(1, str);
 }
 
 void CMainFrame::print(Log::LEVEL level, const char * sformat)
@@ -312,6 +343,7 @@ void CMainFrame::OnFilePlay()
 	// TODO: 在此添加命令处理程序代码
 	if (!player_.isPlaying())
 	{
+		cmdPending_ = 0;
 		if (!checkFilePath())
 			OnFileOpen();
 		else player_.startPlay(fipath_);
@@ -326,29 +358,6 @@ void CMainFrame::OnFilePlay()
 			frms_.clear();
 		}
 	}
-}
-
-void CMainFrame::OnDrawFrame()
-{
-	if (frms_.size() < 1)
-	{
-//		LOGW("没有解压帧！！");
-		return;
-	}
-
-	FrameData f;
-	while (frms_.getFront(f))
-	{
-		m_wndView.DrawFrame(f);
-	}
-
-	if (GetCapture() != &m_slider)
-		m_slider.SetPos(f.tm_);
-
-	Timestamp tm = Timestamp(f.tm_);
-	CString str;
-	str.Format("%s", tm.toString().c_str());
-	m_wndStatusBar.SetPaneText(1, str);
 }
 
 void CMainFrame::OnUpdateFilePlay(CCmdUI *pCmdUI)
@@ -396,7 +405,9 @@ void CMainFrame::OnSeekBackward()
 {
 	// TODO: 在此添加命令处理程序代码
 	player_.setPaused(true);
+	frms_.clear();
 	player_.seekTime(player_ .getTime()-100);
+
 }
 
 void CMainFrame::OnSeekForward()
@@ -503,6 +514,7 @@ LRESULT CMainFrame::OnSliderChange(WPARAM w, LPARAM l)
 	if (pwnd == &m_slider)
 	{
 		int pos = (int)w;
+		frms_.clear();
 		player_.seekTime(pos);
 	}
 

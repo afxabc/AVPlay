@@ -20,7 +20,7 @@ public:
 public:
 	bool start(UINT samplesPerSec, UINT channels, unsigned char bitsPerSample, int ptime = 40);
 	void stop();
-	void inputPcm(const char* data, int len);
+	bool inputPcm(const char* data, int len);
 	void reset();
 
 	int setVolume(int vol);	//0-100

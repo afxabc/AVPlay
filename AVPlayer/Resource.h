@@ -17,6 +17,7 @@
 #define IDC_ZOOM_OUT                    32776
 #define IDC_ROTATE_ANGLE                32778
 #define IDC_INIT_SIZE                   32782
+#define IDC_DRAW_FRAME                  32785
 #define ID_FILE_PAUSE                   32790
 #define IDC_SEEK_FORWARD                32795
 #define IDC_SEEK_BACKWARD               32797

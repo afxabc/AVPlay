@@ -66,6 +66,9 @@
     <ClInclude Include="VolumeDlg.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="timequeue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AVPlayer.cpp">

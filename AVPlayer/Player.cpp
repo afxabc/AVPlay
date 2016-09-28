@@ -72,6 +72,7 @@ Player::Player()
 	, seeked_(true)
 	, timeTotal_(0)
 	, vPending_(0)
+	, aPending_(0)
 {
 	av_register_all();
 	pFormatCtx_ = avformat_alloc_context();
@@ -242,9 +243,18 @@ void Player::tickForward()
 	sigPlay_.on();
 }
 
+void Player::seekReset()
+{
+	vPending_ = 0;
+	aPending_ = 0;
+	queuePlayV_.clear();
+	queuePlayA_.clear();
+	aPlay_.reset();
+}
+
 void Player::onTimer()
 {
-	if (paused_)
+	if (paused_ || seeked_ )
 		return;
 
 	Lock lock(mutex_);
@@ -340,16 +350,15 @@ void Player::seekFrm()
 
 	if (seek_ret < 0)
 	{
+		seeked_ = false;
 		return;
 	}
 
 
-	vPending_ = 0;
-	queuePlayV_.clear();
-	queuePlayA_.clear();
-
 	AVPacket packet;
 	av_init_packet(&packet);
+
+	seekReset();
 
 	bool get1 = false;
 	int64_t dts = 0;
@@ -393,10 +402,10 @@ void Player::seekFrm()
 
 	av_packet_unref(&packet);
 
-	timeBase_ = timeSeek_;
-	aPlay_.reset();
+	timeDtsV_ = timeBase_ = timeSeek_;
 	sigDecode_.on();
 	sigPlay_.on();
+
 }
 
 void Player::decodeAudio(AVPacket & packet)
@@ -435,7 +444,7 @@ void Player::decodeAudio(AVPacket & packet)
 				in_channel_layout, pACodecCtx_->sample_fmt, pACodecCtx_->sample_rate, 0, NULL);
 			swr_init(swrContext_);
 
-			aPlay_.start(out_sample_rate, out_channels, 16);
+			aPlay_.start(out_sample_rate, out_channels, 16, pFrameAudio_->nb_samples*2000/ pFrameAudio_->sample_rate);
 		}
 
 		int nb = swr_convert(swrContext_, (unsigned char**)&pcmBuffer_, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)pFrameAudio_->data, pFrameAudio_->nb_samples);
@@ -443,7 +452,7 @@ void Player::decodeAudio(AVPacket & packet)
 		{
 			FrameData frmOut;
 
-			timeDtsA_ = packet.dts*av_q2d(pFormatCtx_->streams[audioindex_]->time_base) * 1000;
+			timeDtsA_ = packet.pts*av_q2d(pFormatCtx_->streams[audioindex_]->time_base) * 1000- 500;
 
 			frmOut.type_ = FRAME_AUDIO;
 			frmOut.tm_ = timeDtsA_;
@@ -452,8 +461,10 @@ void Player::decodeAudio(AVPacket & packet)
 			memcpy(frmOut.data_, pcmBuffer_, frmOut.size_);
 
 			queuePlayA_.insert(frmOut, timeDtsA_);
+			aPending_++;
 		//	aPlay_.inputPcm(pcmBuffer_, nb*2*2);
 		}
+		else LOGW("=== swr_convert return %d, pFrameAudio_->nb_samples=%d", nb, pFrameAudio_->nb_samples);
 
 		////////////////////////////////////////
 
@@ -477,6 +488,7 @@ void Player::decodeLoop()
 	timeDtsA_ = 0;
 	timePts_ = 0;
 	vPending_ = 0;
+	aPending_ = 0;
 	MMRESULT mRes = ::timeSetEvent(TIMER, 0, &TimerProc, (DWORD)this, TIME_PERIODIC);
 
 	sigDecode_.off();
@@ -487,14 +499,16 @@ void Player::decodeLoop()
 	bool end = false;
 	while (thDecode_.started())
 	{
+		if (!seeked_)
 		{
 			Lock lock(mutex_);
 
 			end = false;
 			if (av_read_frame(pFormatCtx_, &packet) < 0)
 			{
+			//	paused_ = true;
 				end = true;
-				timeBase_ = timeDtsV_ - TIMER;
+				timeBase_ = timeTotal_;
 			}
 			else if (videoindex_ == packet.stream_index)
 			{
@@ -505,19 +519,22 @@ void Player::decodeLoop()
 				decodeAudio(packet);
 			}
 				
+			av_packet_unref(&packet);
 		}
-	
-		av_packet_unref(&packet);
+		else seekFrm();
 
-//		int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
-//		while ((end || (tmMin > timeBase_)) && thDecode_.started())
-		while ((end || vPending_ >= 4) && thDecode_.started())
+		while (thDecode_.started())
 		{
-//			LOGW("wait ...... dts_v=%d dts_a=%d base=%d", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_);
+		//	int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
+			int64_t tmMin = timeDtsV_;
+		//	if (tmMin <= timeBase_+2000 && !end)
+			if ((queuePlayV_.size() <= 60 && !end) || seeked_)
+				break;
+			//LOGW("++++++ wait...v=%d, a=%d, B=%d , qV=%d, qA=%d++++++", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_,
+			//	queuePlayV_.size(), queuePlayA_.size());
 			sigDecode_.wait();
 			end = false;
 		}
-
 	}
 
 	av_packet_unref(&packet);
@@ -533,7 +550,7 @@ void Player::seekLoop()
 	while (thSeek_.started())
 	{
 		sigSeek_.wait(500);
-		seekFrm();
+	//	seekFrm();
 	}
 	LOGW("################ seekLoop quit. ################");
 }
@@ -542,6 +559,8 @@ void Player::playLoop()
 {
 	FrameData frm;
 	eko::MicroSecond when(0);
+	int span = 0;
+
 	bool gotFrm = false;
 
 	sigPlay_.off();
@@ -550,29 +569,38 @@ void Player::playLoop()
 		gotFrm = false;
 
 		timePts_ = 0;
+		span = 0;
 		if (queuePlayV_.peerFront(when))
 		{
 			timePts_ = when;
 			if (when <= timeBase_ && queuePlayV_.getFront(frm))
 			{
-//				LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
+	//			LOGW("%d === %d === %d --- %d", (int)frm.type_, (int)timeBase_, (int)when, frm.size_);
 				vPending_--;
 				decodeFinish_(frm);
 				gotFrm = true;
 			}
+			else span = (when - timeBase_);
 		}
 
 		if (queuePlayA_.peerFront(when))
 		{
 			if (when <= timeBase_ && queuePlayA_.getFront(frm))
 			{
-				aPlay_.inputPcm((char*)frm.data_, frm.size_);
+	//			LOGW("%d ===  ===  --- %d", (int)when, frm.size_);
+				aPending_--;
+				if (!aPlay_.inputPcm((char*)frm.data_, frm.size_))
+					LOGW("%d === %d ---- qV=%d, qA=%d", (int)when, frm.size_, queuePlayV_.size(), queuePlayA_.size());
 				gotFrm = true;
 			}
+			else span = ((when - timeBase_) > span)?span:(when - timeBase_);
 		}
 			
 		if (!gotFrm)
-			sigPlay_.wait(100);
+		{
+			sigPlay_.wait(span);
+
+		}
 	}
 	queuePlayV_.clear();
 	queuePlayA_.clear();

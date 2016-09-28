@@ -53,6 +53,7 @@ protected:  // 控件条嵌入成员
 	CVolumeDlg volDlg_;
 	CString fipath_;
 	Queue<FrameData> frms_;
+	std::atomic_int32_t cmdPending_;
 
 	CToolTipCtrl tooltip_;
 

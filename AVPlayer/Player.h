@@ -81,6 +81,7 @@ public:
 
 	void tickForward();
 
+	void seekReset();
 	void seekTime(int64_t ms)
 	{
 		seeked_ = true;
@@ -135,6 +136,7 @@ private:
 	AVFrame			*pFrameRGB_;
 	SwsContext		*swsContext_;
 	std::atomic_int32_t vPending_;
+	std::atomic_int32_t aPending_;
 	double  q2d_;
 
 	int64_t		timeTotal_;
@@ -147,7 +149,7 @@ private:
 	static const int TIMER = 10;
 	mutable Mutex mutex_;
 	bool paused_;
-	bool seeked_;
+	std::atomic_bool seeked_;
 
 	Thread thDecode_;
 	Signal sigDecode_;

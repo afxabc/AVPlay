@@ -61,6 +61,7 @@ public:
 
 	size_t size()
 	{
+		Lock lock(mutex_);
 		return queue_.size();
 	}
 
