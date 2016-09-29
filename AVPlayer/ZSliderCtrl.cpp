@@ -7,6 +7,8 @@
 
 #include "base/timestamp.h"
 
+
+
 // ZSliderCtrl
 
 IMPLEMENT_DYNAMIC(ZSliderCtrl, CSliderCtrl)
@@ -162,7 +164,7 @@ void ZSliderCtrl::callbackMessage(UINT msg, WPARAM w)
 BOOL ZSliderCtrl::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: 在此添加专用代码和/或调用基类
-	cs.style |= BS_OWNERDRAW;
+//	cs.style |= BS_OWNERDRAW;
 
 //	if ((TBS_VERT & cs.style) != 0)
 //		isHorz_ = FALSE;
@@ -198,19 +200,36 @@ void ZSliderCtrl::OnSize(UINT nType, int cx, int cy)
 	ResetDC();
 }
 
+int ZSliderCtrl::point2Pos(const CPoint& point)
+{
+	int pos;
+
+	if (isHorz_)
+		pos = (point.x - SPAN)*range_ / line_;
+	else pos = ((height_ - point.y) - SPAN)*range_ / line_;
+
+	pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
+	pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
+
+	return pos;
+}
+
 void ZSliderCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (GetCapture() == this)
+	CSliderCtrl::OnLButtonUp(nFlags, point);
+
+//	if (GetCapture() == this)
 	{
+		ReleaseCapture();
 		memDC_.SelectObject(&memPen_);
 		memDC_.SelectObject(&memBrush_);
 //		LOGW("OnLButtonUp pos=%d", GetPos());
-		drawPos();
-		ReleaseCapture();
+
+		int pos = point2Pos(point);
+		pos = SetPos(pos);
 	}
 	
-	CSliderCtrl::OnLButtonUp(nFlags, point);
 }
 
 void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
@@ -221,13 +240,12 @@ void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 		SetCapture();
 		memDC_.SelectObject(&memPenSelect_);
 		memDC_.SelectObject(&memBrushSelect_);
-		int pos;
+
 		if (line_ > 0 && range_ > 0)
 		{
-			if (isHorz_)
-				pos = (point.x - SPAN)*range_ / line_;
-			else pos = ((height_-point.y) - SPAN)*range_ / line_;
+			int pos = point2Pos(point);
 			pos = SetPos(pos);
+			callbackMessage(WM_SLIDER_SELECTED, pos);
 			callbackMessage(WM_SLIDER_CHANGED, pos);
 		}
 	}
@@ -241,13 +259,7 @@ void ZSliderCtrl::OnMouseMove(UINT nFlags, CPoint point)
 
 	if (line_ > 0 && range_ > 0)
 	{
-		int pos;
-		if (isHorz_)
-			pos = (point.x - SPAN)*range_ / line_;
-		else pos = ((height_-point.y) - SPAN)*range_ / line_;
-
-		pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
-		pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
+		int pos = point2Pos(point);
 		if (GetCapture() == this)
 		{
 			pos = SetPos(pos);
@@ -258,3 +270,5 @@ void ZSliderCtrl::OnMouseMove(UINT nFlags, CPoint point)
 		else callbackMessage(WM_SLIDER_HOVER, pos);
 	}
 }
+// F:\AVPlay\AVPlayer\ZSliderCtrl.cpp : 实现文件
+//

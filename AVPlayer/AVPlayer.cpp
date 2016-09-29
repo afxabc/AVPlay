@@ -155,8 +155,6 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-	ON_NOTIFY(NM_RELEASEDCAPTURE, IDC_SLIDER2, &CAboutDlg::OnNMReleasedcaptureSlider2)
-	ON_NOTIFY(TRBN_THUMBPOSCHANGING, IDC_SLIDER2, &CAboutDlg::OnTRBNThumbPosChangingSlider2)
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
 END_MESSAGE_MAP()

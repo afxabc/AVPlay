@@ -40,6 +40,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FRAME_SAVE, &CMainFrame::OnUpdateFrameSave)
 	ON_WM_ACTIVATE()
 	ON_MESSAGE(WM_SLIDER_CHANGED, &CMainFrame::OnSliderChange)
+	ON_MESSAGE(WM_SLIDER_SELECTED, &CMainFrame::OnSliderSelected)
 	ON_MESSAGE(WM_SLIDER_HOVER, &CMainFrame::OnSliderHover)
 END_MESSAGE_MAP()
 
@@ -514,8 +515,22 @@ LRESULT CMainFrame::OnSliderChange(WPARAM w, LPARAM l)
 	if (pwnd == &m_slider)
 	{
 		int pos = (int)w;
-		frms_.clear();
 		player_.seekTime(pos);
+	}
+
+	m_wndView.SetFocus();
+	
+	return 0;
+}
+
+LRESULT CMainFrame::OnSliderSelected(WPARAM w, LPARAM l)
+{
+	CWnd* pwnd = (CWnd*)l;
+
+	if (pwnd == &m_slider)
+	{
+		player_.seekReset();
+		frms_.clear();
 	}
 
 	m_wndView.SetFocus();

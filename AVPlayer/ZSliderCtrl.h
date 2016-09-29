@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 
 // ZSliderCtrl
@@ -39,6 +40,8 @@ protected:
 
 	void callbackMessage(UINT msg, WPARAM w);
 
+	int point2Pos(const CPoint& point);
+
 protected:
 	DECLARE_MESSAGE_MAP()
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
@@ -74,5 +77,4 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
-
 

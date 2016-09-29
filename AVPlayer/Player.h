@@ -134,6 +134,8 @@ private:
 	AVFrame			*pFrameYUV_;
 	AVFrame			*pFrameRGB_;
 	SwsContext		*swsContext_;
+	int vCatch_;
+	int aCatch_;
 	std::atomic_int32_t vPending_;
 	std::atomic_int32_t aPending_;
 	double  q2d_;

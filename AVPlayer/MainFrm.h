@@ -83,6 +83,7 @@ protected:
 	afx_msg void OnUpdateFrameSave(CCmdUI *pCmdUI);
 	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
 	afx_msg LRESULT OnSliderChange(WPARAM w, LPARAM l);
+	afx_msg LRESULT OnSliderSelected(WPARAM w, LPARAM l);
 	afx_msg LRESULT OnSliderHover(WPARAM w, LPARAM l);
 	DECLARE_MESSAGE_MAP()
 

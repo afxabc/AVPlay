@@ -141,6 +141,12 @@ bool Player::startPlay(const char* finame)
 		return false;
 	}
 
+	vCatch_ = 0;
+	if (pVCodecCtx_->framerate.den > 0)
+		vCatch_ = pVCodecCtx_->framerate.num*3 / pVCodecCtx_->framerate.den/2;
+	if (vCatch_ < 40)
+		vCatch_ = 40;
+
 	q2d_ = av_q2d(pFormatCtx_->streams[videoindex_]->time_base);
 	timeTotal_ = pFormatCtx_->duration/1000;
 
@@ -158,8 +164,11 @@ bool Player::startPlay(const char* finame)
 			{
 				pFrameAudio_ = av_frame_alloc();
 				pcmBuffer_ = new char[MAX_AUDIO_FRAME_SIZE*2];
+				aCatch_ = 60;
 			}
 			else LOGW("无法打开音频解码器：%X ！", pACodecCtx_->codec_id);
+			
+
 		}
 		else
 		{
@@ -359,6 +368,10 @@ void Player::decodeAudio(AVPacket & packet)
 			swr_init(swrContext_);
 
 			aPlay_.start(out_sample_rate, out_channels, 16, pFrameAudio_->nb_samples*2000/ pFrameAudio_->sample_rate);
+
+			aCatch_ = pFrameAudio_->sample_rate*3 / pFrameAudio_->nb_samples/2;
+			if (aCatch_ < 60)
+				aCatch_ = 60;
 		}
 
 		int nb = swr_convert(swrContext_, (unsigned char**)&pcmBuffer_, MAX_AUDIO_FRAME_SIZE, (const uint8_t **)pFrameAudio_->data, pFrameAudio_->nb_samples);
@@ -432,7 +445,7 @@ void Player::seekFrm()
 	{
 		if (seekQueue_.size() > 0)
 		{
-			LOGW("*** new seek income !!! =%d ***", seekQueue_.size());
+		//	LOGW("*** new seek income !!! =%d ***", seekQueue_.size());
 			break;
 		}
 
@@ -530,7 +543,7 @@ void Player::decodeLoop()
 		//	int64_t tmMin = (timeDtsV_ > timeDtsA_)?timeDtsA_:timeDtsV_;
 			int64_t tmMin = timeDtsV_;
 		//	if (tmMin <= timeBase_+2000 && !end)
-			if ((queuePlayV_.size() <= 60 && queuePlayA_.size() <= 60 && !end) || seekQueue_.size()>0)
+			if ((queuePlayV_.size() <= vCatch_ && queuePlayA_.size() <= aCatch_ && !end) || seekQueue_.size()>0)
 				break;
 			//LOGW("++++++ wait...v=%d, a=%d, B=%d , qV=%d, qA=%d++++++", (int)timeDtsV_, (int)timeDtsA_, (int)timeBase_,
 			//	queuePlayV_.size(), queuePlayA_.size());
@@ -565,7 +578,7 @@ void Player::playLoop()
 
 		if (queuePlayV_.peerFront(when))
 		{
-			if (queuePlayV_.size() > 70)
+			if (queuePlayV_.size() > vCatch_*2)
 				LOGW("!!!!!! queuePlayV_.size() --- %d", (int)queuePlayV_.size());
 
 			timePts_ = when;
@@ -581,7 +594,7 @@ void Player::playLoop()
 
 		if (queuePlayA_.peerFront(when))
 		{
-			if (queuePlayA_.size() > 70)
+			if (queuePlayA_.size() > aCatch_*2)
 				LOGW("?????? queuePlayA_.size() --- %d", (int)queuePlayA_.size());
 
 			if (when <= tmbase && queuePlayA_.getFront(frm))
