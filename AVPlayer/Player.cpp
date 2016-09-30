@@ -356,7 +356,7 @@ void Player::decodeAudio(AVPacket & packet)
 			uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
 			AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
 			int out_nb_samples = 1024;
-			int out_sample_rate = 44100;
+			int out_sample_rate = pFrameAudio_->sample_rate;
 			int out_channels = av_get_channel_layout_nb_channels(out_channel_layout);
 
 			pcmBufferSize_ = av_samples_get_buffer_size(NULL, out_channels, out_nb_samples, out_sample_fmt, 1);
@@ -369,7 +369,7 @@ void Player::decodeAudio(AVPacket & packet)
 
 			aPlay_.start(out_sample_rate, out_channels, 16, pFrameAudio_->nb_samples*2000/ pFrameAudio_->sample_rate);
 
-			aCatch_ = pFrameAudio_->sample_rate*3 / pFrameAudio_->nb_samples/2;
+			aCatch_ = pFrameAudio_->sample_rate*2 / pFrameAudio_->nb_samples;
 			if (aCatch_ < 60)
 				aCatch_ = 60;
 		}
@@ -586,7 +586,8 @@ void Player::playLoop()
 			{
 			//	LOGW("%d<=%d --- %d", (int)when, tmbase, (int)queuePlayV_.size());
 				vPending_--;
-				decodeFinish_(frm);
+				if (!decodeFinish_(frm))
+					queuePlayV_.earseFront();
 				gotFrm = true;
 			}
 			else span = (when - tmbase);
@@ -602,7 +603,8 @@ void Player::playLoop()
 	//			LOGW("%d ===  ===  --- %d", (int)when, frm.size_);
 				aPending_--;
 				if (!aPlay_.inputPcm((char*)frm.data_, frm.size_))
-					LOGW("%d === %d ---- qV=%d, qA=%d", (int)when, tmbase, queuePlayV_.size(), queuePlayA_.size());
+					;
+	//				LOGW("%d === %d ---- qV=%d, qA=%d", (int)when, tmbase, queuePlayV_.size(), queuePlayA_.size());
 				gotFrm = true;
 			}
 			else span = ((when - tmbase) > span)?span:(when - tmbase);

@@ -40,7 +40,7 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
-	void onFrameData(FrameData frm); 
+	bool onFrameData(FrameData frm); 
 	void print(Log::LEVEL level, const char * sformat);
 
 protected:  // 控件条嵌入成员
@@ -90,6 +90,7 @@ protected:
 public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnUpdateVolume(CCmdUI *pCmdUI);
+	afx_msg void OnDropFiles(HDROP hDropInfo);
 };
 
 

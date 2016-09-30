@@ -32,6 +32,9 @@ bool AudioPlay::start(UINT samplesPerSec, UINT channels, unsigned char bitsPerSa
 
 	//“…Œ £¨±ÿ–Î>=40
 	ptime_ = (ptime >= 40) ? ptime : 40;
+//	ptime_ = ptime;
+	if (ptime_ < 40)
+		TRACE("ptime_=%d <= 40\n", ptime_);
 	
 	HRESULT hr = lpDSound_->SetCooperativeLevel(GetDesktopWindow(), DSSCL_PRIORITY);
 	if (FAILED(hr))
@@ -136,7 +139,7 @@ bool AudioPlay::inputPcm(const char * data, int len)
 
 	while (recvBuff_.readableBytes() >= matchSize)
 	{
-		if (playQueue_.size() > 3)
+		if (playQueue_.size() > 4)
 		{
 //			TRACE("Tooooooooo much in queue !!!!!\n");
 			break;
@@ -195,7 +198,7 @@ void AudioPlay::loop()
 	LPVOID buf = NULL;
 	DWORD  buf_len = 0;
 	DWORD obj = WAIT_OBJECT_0;
-	DWORD offset = bufferNotifySize_ ;
+	DWORD offset = bufferNotifySize_*2 ;
 	DWORD offsetPlay = 0;
 	DWORD totalSize = bufferNotifySize_*MAX_AUDIO_BUF;
 
@@ -226,7 +229,7 @@ void AudioPlay::loop()
 			if (doffset >= bufferNotifySize_)
 				continue;
 
-			//			TRACE("offset=%d, offsetPlay=%d : æ≤“Ù!!!!\n", offset, offsetPlay);
+						TRACE("ptime_=%d, offset=%d, offsetPlay=%d : æ≤“Ù!!!!\n", ptime_, offset, offsetPlay);
 			tmp.erase();
 			tmp.pushBack((unsigned char)0, bufferNotifySize_);		//æ≤“Ù
 		}

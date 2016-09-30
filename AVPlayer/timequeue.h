@@ -40,6 +40,26 @@ public:
 		return ret;
 	}
 
+	int earseFront(int count = 1)
+	{
+		int ret = 0;
+		if (count <= 0)
+			return 0;
+
+		Lock lock(mutex_);
+		while (count > 0)
+		{
+			QUEUE::iterator it = queue_.begin();
+			if (it == queue_.end())
+				break;
+			queue_.erase(it);
+			ret++;
+			count--;
+		}
+
+		return ret;
+	}
+
 	bool peerFront(MicroSecond& when)
 	{
 		bool ret = false;

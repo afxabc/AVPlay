@@ -42,6 +42,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_MESSAGE(WM_SLIDER_CHANGED, &CMainFrame::OnSliderChange)
 	ON_MESSAGE(WM_SLIDER_SELECTED, &CMainFrame::OnSliderSelected)
 	ON_MESSAGE(WM_SLIDER_HOVER, &CMainFrame::OnSliderHover)
+	ON_WM_DROPFILES()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -161,7 +162,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	LOGPRINT(&CMainFrame::print, this);
 //	player_.setDecodeFinish(boost::bind(&CMainFrame::onFrameData, this, _1));
-	player_.setDecodeFinish([this](FrameData frm) { this->onFrameData(frm); });
+	player_.setDecodeFinish([this](FrameData frm)->bool { return this->onFrameData(frm); });
 
 	m_wndView.PostMessage(WM_COMMAND, IDC_INIT_SIZE);
 
@@ -188,6 +189,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	//  CREATESTRUCT cs 来修改窗口类或样式
 
 	cs.dwExStyle &= ~WS_EX_CLIENTEDGE;
+	cs.dwExStyle |= WS_EX_ACCEPTFILES;
 	cs.lpszClass = AfxRegisterWndClass(0);
 	return TRUE;
 }
@@ -225,23 +227,27 @@ BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO*
 	return CFrameWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
 }
 
-void CMainFrame::onFrameData(FrameData frm)
+bool CMainFrame::onFrameData(FrameData frm)
 {
-	static const int MAX_QUEUE_SIZE = 16;
+	static const int MAX_QUEUE_SIZE = 1;
 	if (frms_.size() >= MAX_QUEUE_SIZE)
 	{
 		LOGW("onFrameData : queue fulled !!!!!!");
-		frms_.clear();
-//		return;
+		return false;
 	}
-		
-	frms_.putBack(frm);
-	if (cmdPending_ <= 2)
+	
+	if (cmdPending_ > 1)
 	{
-		cmdPending_++;
-		this->PostMessage(WM_COMMAND, IDC_DRAW_FRAME);
+		LOGW("onFrameData : command pending !!!!!!");
+		return false;
 	}
-		
+
+	frms_.putBack(frm);
+
+	cmdPending_++;
+	this->PostMessage(WM_COMMAND, IDC_DRAW_FRAME);
+	
+	return true;
 }
 
 void CMainFrame::OnDrawFrame()
@@ -558,3 +564,17 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	return __super::PreTranslateMessage(pMsg);
 }
 
+void CMainFrame::OnDropFiles(HDROP hDropInfo)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+//	__super::OnDropFiles(hDropInfo);
+
+	char buf[MAX_PATH];
+	UINT len = ::DragQueryFile(hDropInfo, 0, buf, MAX_PATH);
+
+	fipath_ = buf;
+	fipath_.Replace('"', ' ');
+	fipath_.Trim();
+	if (fipath_.GetLength() > 1)
+		PostMessage(WM_COMMAND, ID_PLAY_START_FILE);
+}

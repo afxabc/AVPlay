@@ -51,4 +51,4 @@ public:
 };
 
 
-typedef std::function<void(FrameData)> FrameHandler;
+typedef std::function<bool(FrameData)> FrameHandler;

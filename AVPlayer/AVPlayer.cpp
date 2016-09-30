@@ -138,11 +138,6 @@ protected:
 // 实现
 protected:
 	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnNMReleasedcaptureSlider2(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnTRBNThumbPosChangingSlider2(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
@@ -155,8 +150,6 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-	ON_WM_VSCROLL()
-	ON_WM_HSCROLL()
 END_MESSAGE_MAP()
 
 // 用于运行对话框的应用程序命令
@@ -170,37 +163,3 @@ void CAVPlayerApp::OnAppAbout()
 
 
 
-
-
-void CAboutDlg::OnNMReleasedcaptureSlider2(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	// TODO: 在此添加控件通知处理程序代码
-	*pResult = 0;
-}
-
-
-void CAboutDlg::OnTRBNThumbPosChangingSlider2(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	// 此功能要求 Windows Vista 或更高版本。
-	// _WIN32_WINNT 符号必须 >= 0x0600。
-	NMTRBTHUMBPOSCHANGING *pNMTPC = reinterpret_cast<NMTRBTHUMBPOSCHANGING *>(pNMHDR);
-	// TODO: 在此添加控件通知处理程序代码
-	*pResult = 0;
-}
-
-
-
-void CAboutDlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnVScroll(nSBCode, nPos, pScrollBar);
-}
-
-
-void CAboutDlg::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
-	CDialogEx::OnHScroll(nSBCode, nPos, pScrollBar);
-}

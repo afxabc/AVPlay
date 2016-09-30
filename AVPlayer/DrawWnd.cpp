@@ -95,7 +95,6 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DSURFACE, &CDrawWnd::OnUpdateShowSurface)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DSPIRIT, &CDrawWnd::OnUpdateShowSpirit)
 	ON_UPDATE_COMMAND_UI(IDC_SHOW_D3DVERTEX, &CDrawWnd::OnUpdateShowVertex)
-
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
 	ON_COMMAND(IDC_WINDOW_FIT, &CDrawWnd::OnWindowFit)
@@ -382,4 +381,3 @@ void CDrawWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	keyDown_ = false;
 	CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
 }
-
