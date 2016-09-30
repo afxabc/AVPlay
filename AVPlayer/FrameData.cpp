@@ -68,7 +68,7 @@ void FrameData::reset()
 	size_ = 0;
 }
 
-bool FrameData::toFile(const char * fmtstr, const char * fipath) const
+bool FrameData::toFile(const char * fipath, const char* ext) const
 { 
 	if (data_ == NULL || size_ == 0)
 		return false;
@@ -87,9 +87,10 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath) const
 
 	bool ret = false;
 
+	/*
 	pFormatCtx = avformat_alloc_context();
 	//Guess format  
-	pOutFormat = av_guess_format(fmtstr, NULL, NULL);
+	pOutFormat = av_guess_format(fmtstr, NULL, NULL);		//"mjpeg"
 	pFormatCtx->oformat = pOutFormat;
 	//Output URL  
 	if (avio_open(&pFormatCtx->pb, fipath, AVIO_FLAG_READ_WRITE) < 0) 
@@ -97,6 +98,14 @@ bool FrameData::toFile(const char * fmtstr, const char * fipath) const
 		LOGE("Couldn't open output file.");
 		goto END;
 	}
+	*/
+	avformat_alloc_output_context2(&pFormatCtx, NULL, ext, fipath); 
+	if (pFormatCtx == NULL)
+	{
+		LOGE("Couldn't open output file.");
+		goto END;
+	}
+	pOutFormat = pFormatCtx->oformat;
 
 	pAVStream  = avformat_new_stream(pFormatCtx, 0);
 	if (pAVStream  == NULL) 
@@ -205,14 +214,4 @@ END:
 
 	
 	return ret;
-}
-
-bool FrameData::toFileJpg(const char * fipath) const
-{
-	return toFile("mjpeg", fipath);
-}
-
-bool FrameData::toFilePng(const char * fipath) const
-{
-	return false;
 }

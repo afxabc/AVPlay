@@ -229,7 +229,8 @@ void AudioPlay::loop()
 			if (doffset >= bufferNotifySize_)
 				continue;
 
-						TRACE("ptime_=%d, offset=%d, offsetPlay=%d : æ≤“Ù!!!!\n", ptime_, offset, offsetPlay);
+//			TRACE("ptime_=%d, offset=%d, offsetPlay=%d : æ≤“Ù!!!!\n", ptime_, offset, offsetPlay);
+
 			tmp.erase();
 			tmp.pushBack((unsigned char)0, bufferNotifySize_);		//æ≤“Ù
 		}

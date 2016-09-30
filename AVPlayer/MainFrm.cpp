@@ -488,7 +488,7 @@ void CMainFrame::OnFrameSave()
 	finame += ".jpg";
 	finame.Replace(':', '_');
 
-	static const char szFilters[] = "图像文件(*.jpg, *.jpeg)|*.jpg|*.jpeg||";
+	static const char szFilters[] = "JPEG文件(*.jpg, *.jpeg)|*.jpg;*.jpeg|PNG文件(*.png)|*.png|TIFF文件(*.tiff)|*.tiff|BMP文件(*.bmp)|*.bmp||";
 	// Create an Open dialog; the default file name extension is ".my".
 	CFileDialog fileDlg(FALSE, "jpg", finame,
 		OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, szFilters, this);
@@ -496,7 +496,8 @@ void CMainFrame::OnFrameSave()
 	if (fileDlg.DoModal() != IDOK)
 		return;
 
-	frm.toFileJpg(fileDlg.GetPathName());
+//	frm.toFile(fileDlg.GetPathName(), fileDlg.GetFileExt());
+	frm.toFile(fileDlg.GetPathName());
 }
 
 void CMainFrame::OnUpdateFrameSave(CCmdUI *pCmdUI)

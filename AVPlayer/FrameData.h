@@ -34,9 +34,7 @@ public:
 
 	void reset();
 
-	bool toFileJpg(const char* fipath) const;
-	bool toFilePng(const char* fipath) const;
-	bool toFile(const char* fmt, const char* fipath) const;
+	bool toFile(const char* fipath, const char* ext = NULL) const;
 
 private:
 	void take(const FrameData& p);

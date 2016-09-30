@@ -37,7 +37,7 @@ public:
 
 	inline bool SaveFrame(const char* fipath)
 	{
-		return frmBak_.toFileJpg(fipath);
+		return frmBak_.toFile(fipath);
 	}
 
 	const FrameData& frame()
