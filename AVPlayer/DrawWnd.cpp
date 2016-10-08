@@ -216,14 +216,11 @@ void CDrawWnd::OnZoomOut()
 void CDrawWnd::OnInitSize()
 {
 	// TODO: 在此添加命令处理程序代码
-	xPos_ = 0;
-	yPos_ = 0;
 	scale_ = 100;
-	rotation_ = ROTATION_0;
+//	rotation_ = ROTATION_0;
 	UpdateCoordinate(TRUE);
 
-	if (cb_)
-		cb_->OnResetSize(width_, height_);
+	this->PostMessage(WM_COMMAND, IDC_WINDOW_FIT);
 }
 
 void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
@@ -236,7 +233,7 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 	RECT r;
 	this->GetClientRect(&r);
 
-	rotation_ = ROTATION_0;
+//	rotation_ = ROTATION_0;
 	if (this->GetParent() != parent_)
 	{
 		scale_ = 100;

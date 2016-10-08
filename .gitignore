@@ -34,3 +34,6 @@
 #.vs/
 .svn/
 .deps/
+
+.vs/AVPlayer/v14/.suo
+*.db

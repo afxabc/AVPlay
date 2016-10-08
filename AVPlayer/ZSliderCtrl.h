@@ -21,6 +21,13 @@ public:
 		return pos_;
 	}
 
+	void SetRange(int min, int max)
+	{
+		__super::SetRange(min, max);
+		posSelectMin_ = posSelectMax_ = min;
+		drawBk();
+	}
+
 	CWnd* setWndCallback(CWnd* pwnd)
 	{
 		CWnd* ret = pwndCallback_;
@@ -28,9 +35,42 @@ public:
 		return ret;
 	}
 
+	void setSelectMin(int min)
+	{
+		if (min == posSelectMin_)
+			return;
+		posSelectMin_ = (min<GetRangeMin())?GetRangeMin():min;
+		drawBk();
+	}
+
+	int getSelectMin()
+	{
+		return posSelectMin_;
+	}
+
+	void setSelectMax(int max)
+	{
+		if (max == posSelectMax_)
+			return;
+		posSelectMax_ = (max>GetRangeMax())?GetRangeMax():max;
+		drawBk();
+	}
+
+	int getSelectMax()
+	{
+		return posSelectMax_;
+	}
+
+	int getSelectRange()
+	{
+		return (posSelectMax_-posSelectMin_);
+	}
+
+
 protected:
-	void ResetDC();
+	void ResetMDC();
 	void DestroyDC();
+	void drawBk();
 	void drawPos();
 
 	bool isValidDC()
@@ -41,6 +81,7 @@ protected:
 	void callbackMessage(UINT msg, WPARAM w);
 
 	int point2Pos(const CPoint& point);
+	CPoint pos2Point(int pos);
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -57,15 +98,18 @@ protected:
 	float line_;
 	float range_;
 	CPen memPen_;
+	CPen memPenPush_;
 	CPen memPenSelect_;
 	CBrush memBrush_;
-	CBrush memBrushSelect_;
+	CBrush memBrushPush_;
 	CDC memDC_;
 	CBitmap memBmp_;
 	CDC memBkDC_;
 	CBitmap memBkBmp_;
 	CFont font_;
 	int pos_;
+	int posSelectMin_;
+	int posSelectMax_;
 	BOOL isHorz_;
 	static const int SPAN = 10;
 

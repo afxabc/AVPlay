@@ -50,6 +50,7 @@ protected:  // 控件条嵌入成员
 	CDrawWnd    m_wndView;
 	CSize	frmSize_;
 	Player player_; 
+	bool playCircle_;
 	CVolumeDlg volDlg_;
 	CString fipath_;
 	Queue<FrameData> frms_;
@@ -91,6 +92,12 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnUpdateVolume(CCmdUI *pCmdUI);
 	afx_msg void OnDropFiles(HDROP hDropInfo);
+	afx_msg void OnSelectEnd();
+	afx_msg void OnSelectStart();
+	afx_msg void OnPlayCircle();
+	afx_msg void OnUpdatePlayCircle(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateSelectStart(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateSelectEnd(CCmdUI *pCmdUI);
 };
 
 

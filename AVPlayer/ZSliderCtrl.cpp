@@ -17,6 +17,8 @@ ZSliderCtrl::ZSliderCtrl(BOOL isHorz)
 	: isHorz_(isHorz)
 	, pwndCallback_(NULL)
 	, pos_(0)
+	, posSelectMin_(0)
+	, posSelectMax_(0)
 {
 	memDC_.m_hDC = NULL;
 	memBmp_.m_hObject = NULL;
@@ -67,7 +69,7 @@ END_MESSAGE_MAP()
 
 // ZSliderCtrl 消息处理程序
 
-void ZSliderCtrl::ResetDC()
+void ZSliderCtrl::ResetMDC()
 {
 	DestroyDC();
 
@@ -88,27 +90,25 @@ void ZSliderCtrl::ResetDC()
 	memBkDC_.CreateCompatibleDC(&dc);
 	memBkBmp_.CreateCompatibleBitmap(&dc, width_, height_);
 	memBkDC_.SelectObject(&memBkBmp_);
-	memBkDC_.FillSolidRect(&r, colorBk_);
-
-	if (isHorz_)
-		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 1, line_, 3, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
-	else memBkDC_.Draw3dRect(width_/2-1, SPAN, 3, line_, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
 
 	memDC_.CreateCompatibleDC(&dc);
 	memBmp_.CreateCompatibleBitmap(&dc, width_, height_);
 	memDC_.SelectObject(&memBmp_);
 
 	memPen_.CreatePen(PS_SOLID, 1, RGB(96, 96, 96));
+	memPenPush_.CreatePen(PS_SOLID, 1, RGB(64, 64, 64));
+	memPenSelect_.CreatePen(PS_SOLID, 2, RGB(64, 64, 64));
 	memDC_.SelectObject(&memPen_);
-	memPenSelect_.CreatePen(PS_SOLID, 1, RGB(64, 64, 64));
 
 	memBrush_.CreateSolidBrush(GetSysColor(COLOR_3DFACE));
+	memBrushPush_.CreateSolidBrush(GetSysColor(COLOR_3DSHADOW));
 	memDC_.SelectObject(&memBrush_);
-	memBrushSelect_.CreateSolidBrush(GetSysColor(COLOR_3DHIGHLIGHT));
 
 	memDC_.SelectObject(&font_);
 
-	drawPos();
+	memBkDC_.SelectObject(&memPenSelect_);
+
+	drawBk();
 }
 
 void ZSliderCtrl::DestroyDC()
@@ -122,10 +122,36 @@ void ZSliderCtrl::DestroyDC()
 		memBkDC_.DeleteDC();
 		memBkBmp_.DeleteObject();
 		memPen_.DeleteObject();
+		memPenPush_.DeleteObject();
 		memPenSelect_.DeleteObject();
 		memBrush_.DeleteObject();
-		memBrushSelect_.DeleteObject();
+		memBrushPush_.DeleteObject();
 	}
+}
+
+void ZSliderCtrl::drawBk()
+{
+	if (!isValidDC())
+		return;
+
+	RECT r;
+	this->GetClientRect(&r);
+
+	memBkDC_.FillSolidRect(&r, colorBk_);
+
+	if (isHorz_)
+		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 1, line_, 3, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
+	else memBkDC_.Draw3dRect(width_ / 2 - 1, SPAN, 3, line_, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
+
+	if (getSelectRange() > 0)
+	{
+		CPoint point = pos2Point(posSelectMin_);
+		memBkDC_.MoveTo(point);
+		point = pos2Point(posSelectMax_);
+		memBkDC_.LineTo(point);
+	}
+
+	drawPos();
 }
 
 void ZSliderCtrl::drawPos()
@@ -178,7 +204,7 @@ void ZSliderCtrl::OnPaint()
 					   // TODO: 在此处添加消息处理程序代码
 					   // 不为绘图消息调用 CSliderCtrl::OnPaint()
 	if (!isValidDC())
-		ResetDC();
+		ResetMDC();
 
 	dc.BitBlt(0, 0, width_, height_, &memDC_, 0, 0, SRCCOPY);
 }
@@ -189,7 +215,7 @@ void ZSliderCtrl::OnNMThemeChanged(NMHDR *pNMHDR, LRESULT *pResult)
 	// 符号 _WIN32_WINNT 必须 >= 0x0501。
 	// TODO: 在此添加控件通知处理程序代码
 	*pResult = 0;
-	ResetDC();
+	ResetMDC();
 }
 
 void ZSliderCtrl::OnSize(UINT nType, int cx, int cy)
@@ -197,7 +223,7 @@ void ZSliderCtrl::OnSize(UINT nType, int cx, int cy)
 	CSliderCtrl::OnSize(nType, cx, cy);
 
 	// TODO: 在此处添加消息处理程序代码
-	ResetDC();
+	ResetMDC();
 }
 
 int ZSliderCtrl::point2Pos(const CPoint& point)
@@ -212,6 +238,26 @@ int ZSliderCtrl::point2Pos(const CPoint& point)
 	pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
 
 	return pos;
+}
+
+CPoint ZSliderCtrl::pos2Point(int pos)
+{
+	CPoint point;
+
+	pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
+	pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
+
+	point.x = width_ / 2;
+	point.y = height_ / 2;
+
+	if (range_ <= 0)
+		return point;
+
+	if (isHorz_)
+		point.x = pos*line_ / range_ + SPAN;	//pos = (point.x - SPAN)*range_ / line_;
+	else point.y = height_ - (pos*line_ / range_ + SPAN);	//pos = ((height_ - point.y) - SPAN)*range_ / line_;
+
+	return point;
 }
 
 void ZSliderCtrl::OnLButtonUp(UINT nFlags, CPoint point)
@@ -238,8 +284,8 @@ void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	if (GetCapture() != this)
 	{
 		SetCapture();
-		memDC_.SelectObject(&memPenSelect_);
-		memDC_.SelectObject(&memBrushSelect_);
+		memDC_.SelectObject(&memPenPush_);
+		memDC_.SelectObject(&memBrushPush_);
 
 		if (line_ > 0 && range_ > 0)
 		{

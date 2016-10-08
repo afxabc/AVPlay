@@ -43,6 +43,12 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_MESSAGE(WM_SLIDER_SELECTED, &CMainFrame::OnSliderSelected)
 	ON_MESSAGE(WM_SLIDER_HOVER, &CMainFrame::OnSliderHover)
 	ON_WM_DROPFILES()
+	ON_COMMAND(IDC_SELECT_END, &CMainFrame::OnSelectEnd)
+	ON_COMMAND(IDC_SELECT_START, &CMainFrame::OnSelectStart)
+	ON_COMMAND(IDC_PLAY_CIRCLE, &CMainFrame::OnPlayCircle)
+	ON_UPDATE_COMMAND_UI(IDC_PLAY_CIRCLE, &CMainFrame::OnUpdatePlayCircle)
+	ON_UPDATE_COMMAND_UI(IDC_SELECT_START, &CMainFrame::OnUpdateSelectStart)
+	ON_UPDATE_COMMAND_UI(IDC_SELECT_END, &CMainFrame::OnUpdateSelectEnd)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -60,6 +66,7 @@ CMainFrame::CMainFrame(LPCTSTR fipath)
 	: fipath_(fipath)
 	, frmSize_(-1, -1)
 	, cmdPending_(0)
+	, playCircle_(false)
 {
 	// TODO: 在此添加成员初始化代码
 }
@@ -268,6 +275,17 @@ void CMainFrame::OnDrawFrame()
 	if (GetCapture() != &m_slider)
 		m_slider.SetPos(f.tm_);
 
+	if (playCircle_ && !player_.isPaused())
+	{
+		int pos = m_slider.GetPos();
+		if (pos < m_slider.getSelectMin()-10000 || pos > m_slider.getSelectMax())
+		{
+			frms_.clear();
+			player_.seekTime(m_slider.getSelectMin());
+			return;
+		}
+	}
+
 	Timestamp tm = Timestamp(f.tm_);
 	CString str;
 	str.Format("%s", tm.toString().c_str());
@@ -331,6 +349,8 @@ void CMainFrame::OnFileOpen()
 
 void CMainFrame::OnPlayStartFile()
 {
+	playCircle_ = false;
+
 	if (!checkFilePath())
 		return;
 
@@ -361,6 +381,7 @@ void CMainFrame::OnFilePlay()
 			player_.setPaused(false);
 		else
 		{
+			playCircle_ = false;
 			player_.stopPlay();
 			frms_.clear();
 		}
@@ -578,4 +599,47 @@ void CMainFrame::OnDropFiles(HDROP hDropInfo)
 	fipath_.Trim();
 	if (fipath_.GetLength() > 1)
 		PostMessage(WM_COMMAND, ID_PLAY_START_FILE);
+}
+
+void CMainFrame::OnSelectEnd()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_slider.setSelectMax(m_slider.GetPos());
+	if (m_slider.getSelectRange() <= 0)
+		playCircle_ = false;
+}
+
+void CMainFrame::OnSelectStart()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_slider.setSelectMin(m_slider.GetPos());
+	if (m_slider.getSelectRange() <= 0)
+		playCircle_ = false;
+}
+
+void CMainFrame::OnUpdateSelectStart(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->Enable(player_.isPlaying());
+}
+
+void CMainFrame::OnUpdateSelectEnd(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->Enable(player_.isPlaying());
+}
+
+void CMainFrame::OnPlayCircle()
+{
+	// TODO: 在此添加命令处理程序代码
+	playCircle_ = !playCircle_;
+	if (m_slider.getSelectRange() <= 0)
+		playCircle_ = false;
+}
+
+void CMainFrame::OnUpdatePlayCircle(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->SetCheck(playCircle_);
+	pCmdUI->Enable(player_.isPlaying());
 }

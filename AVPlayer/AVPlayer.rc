@@ -96,6 +96,10 @@ BEGIN
     SEPARATOR
     BUTTON      IDC_WINDOW_FIT
     SEPARATOR
+    BUTTON      IDC_SELECT_START
+    BUTTON      IDC_SELECT_END
+    BUTTON      IDC_PLAY_CIRCLE
+    SEPARATOR
     BUTTON      ID_VOLUME_BAR
     SEPARATOR
     BUTTON      ID_SEEK_BAR
@@ -116,12 +120,16 @@ BEGIN
         MENUITEM "暂停",                          ID_FILE_PAUSE
         MENUITEM SEPARATOR
         MENUITEM "退出(&X)",                      ID_APP_EXIT
-        MENUITEM "打开",                          32804
+        MENUITEM "打开",                          ID_PLAY_START_FILE
     END
     POPUP "操作"
     BEGIN
         MENUITEM "向前步进",                        IDC_SEEK_FORWARD
         MENUITEM "向后步进",                        IDC_SEEK_BACKWARD
+        MENUITEM SEPARATOR
+        MENUITEM "选择起点",                        IDC_SELECT_START
+        MENUITEM "选择终点",                        IDC_SELECT_END
+        MENUITEM "循环播",                         IDC_PLAY_CIRCLE
         MENUITEM SEPARATOR
         MENUITEM "音量+",                         ID_VOLUME_UP
         MENUITEM "音量-",                         ID_VOLUME_DOWN
@@ -392,6 +400,9 @@ BEGIN
     ID_VOLUME_UP            "音量+"
     IDC_WINDOW_FIT          "窗口适应\n窗口适应"
     ID_FRAME_SAVE           "保存图像\n保存图像"
+    IDC_SELECT_START        "选择起点\n选择起点"
+    IDC_SELECT_END          "选择终点\n选择终点"
+    IDC_PLAY_CIRCLE         "循环播放\n循环播放"
 END
 
 #endif    // 中文(简体，中国) resources
