@@ -25,6 +25,7 @@ public:
 	{
 		__super::SetRange(min, max);
 		posSelectMin_ = posSelectMax_ = min;
+		range_ = GetRangeMax() - GetRangeMin();
 		drawBk();
 	}
 
@@ -70,13 +71,20 @@ public:
 protected:
 	void ResetMDC();
 	void DestroyDC();
-	void drawBk();
-	void drawPos();
-
 	bool isValidDC()
 	{
 		return (memDC_.m_hDC != NULL);
 	}
+
+	bool ResetBall(bool isPush = false);
+	void DestroyBall();
+	bool isValidBall()
+	{
+		return (memDCBall_.m_hDC != NULL);
+	}
+
+	void drawBk();
+	void drawPos();
 
 	void callbackMessage(UINT msg, WPARAM w);
 
@@ -97,15 +105,20 @@ protected:
 	int height_;
 	float line_;
 	float range_;
-	CPen memPen_;
-	CPen memPenPush_;
-	CPen memPenSelect_;
-	CBrush memBrush_;
-	CBrush memBrushPush_;
+
 	CDC memDC_;
 	CBitmap memBmp_;
 	CDC memBkDC_;
 	CBitmap memBkBmp_;
+
+	CDC memDCBall_;
+	CBitmap memBmpBall_;
+	int widthBall_;
+	int heightBall_;
+	static const BYTE TRANSPARENT_NORMAL = 0xAF;
+	static const BYTE TRANSPARENT_PUSH = 0x7F;
+	BYTE transparentBall_; //半透明(0-ff,透明度从全透明到不透明) 
+
 	CFont font_;
 	int pos_;
 	int posSelectMin_;

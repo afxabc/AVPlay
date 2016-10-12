@@ -19,9 +19,10 @@ ZSliderCtrl::ZSliderCtrl(BOOL isHorz)
 	, pos_(0)
 	, posSelectMin_(0)
 	, posSelectMax_(0)
+	, transparentBall_(TRANSPARENT_NORMAL)
 {
 	memDC_.m_hDC = NULL;
-	memBmp_.m_hObject = NULL;
+	memDCBall_.m_hDC = NULL;
 
 	font_.CreateFont(
 		12,                        // nHeight
@@ -44,6 +45,7 @@ ZSliderCtrl::ZSliderCtrl(BOOL isHorz)
 ZSliderCtrl::~ZSliderCtrl()
 {
 	DestroyDC();
+	DestroyBall();
 }
 
 int ZSliderCtrl::SetPos(int pos)
@@ -95,18 +97,7 @@ void ZSliderCtrl::ResetMDC()
 	memBmp_.CreateCompatibleBitmap(&dc, width_, height_);
 	memDC_.SelectObject(&memBmp_);
 
-	memPen_.CreatePen(PS_SOLID, 1, RGB(96, 96, 96));
-	memPenPush_.CreatePen(PS_SOLID, 1, RGB(64, 64, 64));
-	memPenSelect_.CreatePen(PS_SOLID, 2, RGB(64, 64, 64));
-	memDC_.SelectObject(&memPen_);
-
-	memBrush_.CreateSolidBrush(GetSysColor(COLOR_3DFACE));
-	memBrushPush_.CreateSolidBrush(GetSysColor(COLOR_3DSHADOW));
-	memDC_.SelectObject(&memBrush_);
-
 	memDC_.SelectObject(&font_);
-
-	memBkDC_.SelectObject(&memPenSelect_);
 
 	drawBk();
 }
@@ -121,11 +112,17 @@ void ZSliderCtrl::DestroyDC()
 		memBmp_.DeleteObject();
 		memBkDC_.DeleteDC();
 		memBkBmp_.DeleteObject();
-		memPen_.DeleteObject();
-		memPenPush_.DeleteObject();
-		memPenSelect_.DeleteObject();
-		memBrush_.DeleteObject();
-		memBrushPush_.DeleteObject();
+	}
+
+}
+
+void ZSliderCtrl::DestroyBall()
+{
+	if (isValidBall())
+	{
+		memDCBall_.DeleteDC();
+		memDCBall_.m_hDC = NULL;
+		memBmpBall_.DeleteObject();
 	}
 }
 
@@ -139,16 +136,43 @@ void ZSliderCtrl::drawBk()
 
 	memBkDC_.FillSolidRect(&r, colorBk_);
 
+	static const COLORREF clrDark = GetSysColor(COLOR_3DSHADOW);
+	static const COLORREF clrLight = GetSysColor(COLOR_3DHIGHLIGHT);
+
 	if (isHorz_)
-		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 1, line_, 3, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
-	else memBkDC_.Draw3dRect(width_ / 2 - 1, SPAN, 3, line_, GetSysColor(COLOR_3DSHADOW), GetSysColor(COLOR_3DHIGHLIGHT));
+		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 2, line_, 4, clrDark, clrDark);
+	else memBkDC_.Draw3dRect(width_ / 2 - 2, SPAN, 4, line_, clrDark, clrDark);
 
 	if (getSelectRange() > 0)
 	{
-		CPoint point = pos2Point(posSelectMin_);
-		memBkDC_.MoveTo(point);
-		point = pos2Point(posSelectMax_);
-		memBkDC_.LineTo(point);
+		static const COLORREF clrSelect = GetSysColor(COLOR_3DSHADOW);
+		CPen penSelect;
+		penSelect.CreatePen(PS_SOLID, 2, clrSelect);
+		CPen penLine;
+		penLine.CreatePen(PS_SOLID, 1, clrSelect);
+
+		CPoint ptMin = pos2Point(posSelectMin_);
+		CPoint ptMax = pos2Point(posSelectMax_);
+
+		memBkDC_.SelectObject(&penSelect);
+		memBkDC_.MoveTo(ptMin);
+		memBkDC_.LineTo(ptMax);
+
+		memBkDC_.SelectObject(&penLine);
+		if (isHorz_)
+		{
+			memBkDC_.MoveTo(ptMin.x, SPAN/2);
+			memBkDC_.LineTo(ptMin.x, height_-SPAN/2);
+			memBkDC_.MoveTo(ptMax.x, SPAN / 2);
+			memBkDC_.LineTo(ptMax.x, height_- SPAN / 2);
+		}
+		else
+		{
+			memBkDC_.MoveTo(SPAN / 2, ptMin.y);
+			memBkDC_.LineTo(width_- SPAN / 2, ptMin.y);
+			memBkDC_.MoveTo(SPAN / 2, ptMax.y);
+			memBkDC_.LineTo(width_- SPAN / 2, ptMax.y);
+		}
 	}
 
 	drawPos();
@@ -161,22 +185,84 @@ void ZSliderCtrl::drawPos()
 
 	memDC_.BitBlt(0, 0, width_, height_, &memBkDC_, 0, 0, SRCCOPY);
 
-	range_ = GetRangeMax() - GetRangeMin();
-	if (range_ <= 0)
+	if (!isValidBall() && !ResetBall())
 		return;
 
 	float pos = GetPos() - GetRangeMin();
-	int r = 5;
-
 	int x = isHorz_?(line_*pos / range_+SPAN):(width_/2-1);
 	int y = isHorz_?(height_/2-1):(height_ - line_*pos / range_-SPAN);
-	int w = isHorz_?4:(width_ / 2 - 2);
-	int h = isHorz_?(height_ / 2 - 2):4;
 
-	memDC_.RoundRect(x - w, y - h, x + w, y + h, r, r);
+//	memDC_.BitBlt(x - widthBall_ / 2, y - heightBall_ / 2, widthBall_, heightBall_, &memDCBall_, 0, 0, SRCCOPY);
 
-//	LOGW("drawPos pos=%f", pos);
+	BLENDFUNCTION bf;
+	bf.BlendOp = AC_SRC_OVER;
+	bf.BlendFlags = 0;
+	bf.SourceConstantAlpha = transparentBall_;  
+	bf.AlphaFormat = 0;
+	memDC_.AlphaBlend(x - widthBall_ / 2, y - heightBall_ / 2, widthBall_, heightBall_, 
+		&memDCBall_, 0, 0, widthBall_, heightBall_, bf);    
+
 	Invalidate(FALSE);
+}
+
+bool ZSliderCtrl::ResetBall(bool isPush)
+{
+	DestroyBall();
+
+	if (range_ <= 0)
+		return false;
+
+	float pos = GetPos() - GetRangeMin();
+
+	static const int W = 11;
+
+	widthBall_ = isHorz_ ? W : (width_ - 4);
+	heightBall_ = isHorz_ ? (height_ - 4) : W;
+
+	CClientDC dc(this);
+
+	memDCBall_.CreateCompatibleDC(&dc);
+	memBmpBall_.CreateCompatibleBitmap(&dc, widthBall_, heightBall_);
+	memDCBall_.SelectObject(&memBmpBall_);
+
+	static const COLORREF clrDark = RGB(64, 64, 64);
+	static const COLORREF clrLight = RGB(96, 96, 96);
+
+	int rectBold = 1;
+	CPen penLine;
+	CPen penRect;
+	if (isPush)
+	{
+		penLine.CreatePen(PS_SOLID, 1, clrDark);
+		rectBold = 2;
+		penRect.CreatePen(PS_SOLID, rectBold, clrDark);
+	}
+	else
+	{
+		penLine.CreatePen(PS_SOLID, 1, clrLight);
+		penRect.CreatePen(PS_SOLID, rectBold, clrLight);
+	}
+
+	CBrush brushRect;
+	brushRect.CreateSolidBrush(GetSysColor(COLOR_3DFACE));
+
+	memDCBall_.SelectObject(&penRect);
+	memDCBall_.SelectObject(&brushRect);
+	memDCBall_.Rectangle(rectBold-1, rectBold-1, widthBall_, heightBall_);
+
+	memDCBall_.SelectObject(&penLine);
+	if (isHorz_)
+	{
+		memDCBall_.MoveTo(widthBall_ /2, 2);
+		memDCBall_.LineTo(widthBall_ /2, heightBall_ -2);
+	}
+	else
+	{
+		memDCBall_.MoveTo(2, heightBall_ /2);
+		memDCBall_.LineTo(widthBall_ -2, heightBall_ /2);
+	}
+
+	return true;
 }
 
 void ZSliderCtrl::callbackMessage(UINT msg, WPARAM w)
@@ -268,10 +354,8 @@ void ZSliderCtrl::OnLButtonUp(UINT nFlags, CPoint point)
 //	if (GetCapture() == this)
 	{
 		ReleaseCapture();
-		memDC_.SelectObject(&memPen_);
-		memDC_.SelectObject(&memBrush_);
-//		LOGW("OnLButtonUp pos=%d", GetPos());
-
+		transparentBall_ = TRANSPARENT_NORMAL;//半透明(0-ff,透明度从全透明到不透明) 
+		ResetBall();
 		int pos = point2Pos(point);
 		pos = SetPos(pos);
 	}
@@ -284,8 +368,8 @@ void ZSliderCtrl::OnLButtonDown(UINT nFlags, CPoint point)
 	if (GetCapture() != this)
 	{
 		SetCapture();
-		memDC_.SelectObject(&memPenPush_);
-		memDC_.SelectObject(&memBrushPush_);
+		transparentBall_ = TRANSPARENT_PUSH;//半透明(0-ff,透明度从全透明到不透明) 
+		ResetBall(true);
 
 		if (line_ > 0 && range_ > 0)
 		{

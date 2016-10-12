@@ -36,4 +36,4 @@
 .deps/
 
 .vs/AVPlayer/v14/.suo
-*.db
+*.pdb/
