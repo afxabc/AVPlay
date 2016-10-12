@@ -136,20 +136,19 @@ void ZSliderCtrl::drawBk()
 
 	memBkDC_.FillSolidRect(&r, colorBk_);
 
-	static const COLORREF clrDark = GetSysColor(COLOR_3DSHADOW);
-	static const COLORREF clrLight = GetSysColor(COLOR_3DHIGHLIGHT);
+	static const COLORREF clrDark = RGB(96, 96, 96);
+	static const COLORREF clrLight = RGB(128, 128, 128);
 
 	if (isHorz_)
-		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 2, line_, 4, clrDark, clrDark);
-	else memBkDC_.Draw3dRect(width_ / 2 - 2, SPAN, 4, line_, clrDark, clrDark);
+		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 2, line_, 4, clrLight, clrLight);
+	else memBkDC_.Draw3dRect(width_ / 2 - 2, SPAN, 4, line_, clrLight, clrLight);
 
 	if (getSelectRange() > 0)
 	{
-		static const COLORREF clrSelect = GetSysColor(COLOR_3DSHADOW);
 		CPen penSelect;
-		penSelect.CreatePen(PS_SOLID, 2, clrSelect);
+		penSelect.CreatePen(PS_SOLID, 2, clrLight);
 		CPen penLine;
-		penLine.CreatePen(PS_SOLID, 1, clrSelect);
+		penLine.CreatePen(PS_SOLID, 1, clrDark);
 
 		CPoint ptMin = pos2Point(posSelectMin_);
 		CPoint ptMax = pos2Point(posSelectMax_);
@@ -225,8 +224,8 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 	memBmpBall_.CreateCompatibleBitmap(&dc, widthBall_, heightBall_);
 	memDCBall_.SelectObject(&memBmpBall_);
 
-	static const COLORREF clrDark = RGB(64, 64, 64);
-	static const COLORREF clrLight = RGB(96, 96, 96);
+	static const COLORREF clrDark = RGB(0, 0, 0);
+	static const COLORREF clrLight = RGB(64, 64, 64);
 
 	int rectBold = 1;
 	CPen penLine;
@@ -253,13 +252,13 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 	memDCBall_.SelectObject(&penLine);
 	if (isHorz_)
 	{
-		memDCBall_.MoveTo(widthBall_ /2, 2);
-		memDCBall_.LineTo(widthBall_ /2, heightBall_ -2);
+		memDCBall_.MoveTo(widthBall_ /2, heightBall_/4);
+		memDCBall_.LineTo(widthBall_ /2, heightBall_ - heightBall_ / 4);
 	}
 	else
 	{
-		memDCBall_.MoveTo(2, heightBall_ /2);
-		memDCBall_.LineTo(widthBall_ -2, heightBall_ /2);
+		memDCBall_.MoveTo(widthBall_/4, heightBall_ /2);
+		memDCBall_.LineTo(widthBall_ - widthBall_ / 4, heightBall_ /2);
 	}
 
 	return true;
