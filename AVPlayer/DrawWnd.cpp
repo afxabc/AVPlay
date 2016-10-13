@@ -29,6 +29,7 @@ CDrawWnd::CDrawWnd()
 	, rotation_(ROTATION_0)
 	, idHandle_(0)
 	, keyDown_(false)
+	, isFullScreen_(false)
 {
 }
 
@@ -191,7 +192,7 @@ void CDrawWnd::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
 	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
-	UpdateCoordinate(TRUE);
+//	UpdateCoordinate(TRUE);
 	OnWindowFit();
 }
 
@@ -201,7 +202,10 @@ void CDrawWnd::OnZoomIn()
 	int SPAN = (scale_>=250) ? 50 :((scale_<100) ? 5 : 10);
 	if (scale_ < 500)
 		scale_ += SPAN;
-	UpdateCoordinate(TRUE);
+
+	if (isFullScreen_)
+		UpdateCoordinate(TRUE);
+	else OnWindowFit();
 }
 
 void CDrawWnd::OnZoomOut()
@@ -210,12 +214,24 @@ void CDrawWnd::OnZoomOut()
 	int SPAN = (scale_>250) ? 50 : ((scale_<100) ? 5 : 10);
 	if (scale_ > 20)
 		scale_ -= SPAN;
-	UpdateCoordinate(TRUE);
+
+	if (isFullScreen_)
+		UpdateCoordinate(TRUE);
+	else OnWindowFit();
 }
 
 void CDrawWnd::OnInitSize()
 {
 	// TODO: 在此添加命令处理程序代码
+
+	if (isFullScreen_)
+	{
+		isFullScreen_ = false;
+		SetParent(parent_);
+		SetWindowPos(&CWnd::wndBottom, 0, 0, width_, height_, 0);
+		parent_->RecalcLayout(1);
+	}
+
 	scale_ = 100;
 //	rotation_ = ROTATION_0;
 	UpdateCoordinate(TRUE);
@@ -233,15 +249,8 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 	RECT r;
 	this->GetClientRect(&r);
 
-//	rotation_ = ROTATION_0;
-	if (this->GetParent() != parent_)
-	{
-		scale_ = 100;
-		SetParent(parent_);
-		SetWindowPos(&CWnd::wndBottom, 0, 0, width_, height_, 0);
-		parent_->RecalcLayout(1);
-		OnWindowFit();
-	}
+	if (isFullScreen_ || scale_!=100)
+		OnInitSize();
 	else OnFullScreen();
 }
 
@@ -255,8 +264,7 @@ void CDrawWnd::OnMButtonUp(UINT nFlags, CPoint point)
 void CDrawWnd::OnWindowFit()
 {
 	// TODO: 在此添加命令处理程序代码
-
-	if (this->GetParent() != AfxGetApp()->GetMainWnd())
+	if (isFullScreen_)
 		return;
 
 	xPos_ = 0;
@@ -280,6 +288,8 @@ void CDrawWnd::OnFullScreen()
 	xPos_ = 0;
 	yPos_ = 0;
 	scale_ = (scalex > scaley) ? scaley : scalex;
+
+	isFullScreen_ = true;
 
 	SetParent(NULL);
 	SetWindowPos(&CWnd::wndTopMost, 0, 0, full_x, full_y, 0);

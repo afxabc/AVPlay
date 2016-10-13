@@ -83,6 +83,7 @@ protected:
 	bool keyDown_;
 
 	CFrameWnd* parent_;
+	bool isFullScreen_;
 
 protected:
 	DECLARE_MESSAGE_MAP()

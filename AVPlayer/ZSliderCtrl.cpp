@@ -158,19 +158,20 @@ void ZSliderCtrl::drawBk()
 		memBkDC_.LineTo(ptMax);
 
 		memBkDC_.SelectObject(&penLine);
+		int span = 2;
 		if (isHorz_)
 		{
-			memBkDC_.MoveTo(ptMin.x, SPAN/2);
-			memBkDC_.LineTo(ptMin.x, height_-SPAN/2);
-			memBkDC_.MoveTo(ptMax.x, SPAN / 2);
-			memBkDC_.LineTo(ptMax.x, height_- SPAN / 2);
+			memBkDC_.MoveTo(ptMin.x, span);
+			memBkDC_.LineTo(ptMin.x, height_- span);
+			memBkDC_.MoveTo(ptMax.x, span);
+			memBkDC_.LineTo(ptMax.x, height_- span);
 		}
 		else
 		{
-			memBkDC_.MoveTo(SPAN / 2, ptMin.y);
-			memBkDC_.LineTo(width_- SPAN / 2, ptMin.y);
-			memBkDC_.MoveTo(SPAN / 2, ptMax.y);
-			memBkDC_.LineTo(width_- SPAN / 2, ptMax.y);
+			memBkDC_.MoveTo(span, ptMin.y);
+			memBkDC_.LineTo(width_- span, ptMin.y);
+			memBkDC_.MoveTo(span, ptMax.y);
+			memBkDC_.LineTo(width_- span, ptMax.y);
 		}
 	}
 
@@ -214,9 +215,10 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 	float pos = GetPos() - GetRangeMin();
 
 	static const int W = 11;
+	static const int H_SPAN = 2;
 
-	widthBall_ = isHorz_ ? W : (width_ - 4);
-	heightBall_ = isHorz_ ? (height_ - 4) : W;
+	widthBall_ = isHorz_ ? W : (width_ - H_SPAN*2 + 1);
+	heightBall_ = isHorz_ ? (height_ - H_SPAN*2 + 1) : W;
 
 	CClientDC dc(this);
 
