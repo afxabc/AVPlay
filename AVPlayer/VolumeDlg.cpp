@@ -54,6 +54,9 @@ BOOL CVolumeDlg::OnInitDialog()
 
 	slider_.SetRange(0, 100);
 	slider_.setWndCallback(this);
+
+//	slider_.setSelectMin(30);
+//	slider_.setSelectMax(80);
 	// TODO:  在此添加额外的初始化
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE

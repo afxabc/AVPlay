@@ -275,6 +275,9 @@ void CMainFrame::OnDrawFrame()
 	if (GetCapture() != &m_slider)
 		m_slider.SetPos(f.tm_);
 
+	if (m_slider.getSelectRange() <= 0)
+		playCircle_ = false;
+
 	if (playCircle_ && !player_.isPaused())
 	{
 		int pos = m_slider.GetPos();

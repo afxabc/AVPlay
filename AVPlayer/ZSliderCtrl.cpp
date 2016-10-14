@@ -67,6 +67,7 @@ BEGIN_MESSAGE_MAP(ZSliderCtrl, CSliderCtrl)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
+	ON_WM_RBUTTONUP()
 END_MESSAGE_MAP()
 
 // ZSliderCtrl 消息处理程序
@@ -137,21 +138,22 @@ void ZSliderCtrl::drawBk()
 	memBkDC_.FillSolidRect(&r, colorBk_);
 
 	static const COLORREF clrDark = RGB(96, 96, 96);
-	static const COLORREF clrLight = RGB(128, 128, 128);
+	static const COLORREF clrLight = RGB(160, 160, 160);
 
+	static const int sliderWidth = 5;
 	if (isHorz_)
-		memBkDC_.Draw3dRect(SPAN, height_ / 2 - 2, line_, 4, clrLight, clrLight);
-	else memBkDC_.Draw3dRect(width_ / 2 - 2, SPAN, 4, line_, clrLight, clrLight);
+		memBkDC_.Draw3dRect(SPAN, height_ / 2 - sliderWidth/2 - 1, line_, sliderWidth, clrLight, clrLight);
+	else memBkDC_.Draw3dRect(width_ / 2 - sliderWidth/2 - 1, SPAN, sliderWidth, line_, clrLight, clrLight);
 
 	if (getSelectRange() > 0)
 	{
 		CPen penSelect;
-		penSelect.CreatePen(PS_SOLID, 2, clrLight);
+		penSelect.CreatePen(PS_SOLID, 3, clrLight);
 		CPen penLine;
 		penLine.CreatePen(PS_SOLID, 1, clrDark);
 
-		CPoint ptMin = pos2Point(posSelectMin_);
-		CPoint ptMax = pos2Point(posSelectMax_);
+		CPoint ptMin = pos2Point(posSelectMin_, -1);
+		CPoint ptMax = pos2Point(posSelectMax_, -1);
 
 		memBkDC_.SelectObject(&penSelect);
 		memBkDC_.MoveTo(ptMin);
@@ -159,19 +161,42 @@ void ZSliderCtrl::drawBk()
 
 		memBkDC_.SelectObject(&penLine);
 		int span = 2;
+		int th = 3;
 		if (isHorz_)
 		{
 			memBkDC_.MoveTo(ptMin.x, span);
-			memBkDC_.LineTo(ptMin.x, height_- span);
+			memBkDC_.LineTo(ptMin.x, height_- span - 1);
+			//三角形
+			memBkDC_.MoveTo(ptMin.x- th, height_/2- th -1);
+			memBkDC_.LineTo(ptMin.x, height_/2 -1);
+			memBkDC_.LineTo(ptMin.x- th, height_/2+ th -1);
+			memBkDC_.LineTo(ptMin.x- th, height_/2- th -1);
+
 			memBkDC_.MoveTo(ptMax.x, span);
-			memBkDC_.LineTo(ptMax.x, height_- span);
+			memBkDC_.LineTo(ptMax.x, height_- span - 1);
+			//三角形
+			memBkDC_.MoveTo(ptMax.x+ th, height_/2- th -1);
+			memBkDC_.LineTo(ptMax.x, height_/2 -1);
+			memBkDC_.LineTo(ptMax.x+ th, height_/2+ th -1);
+			memBkDC_.LineTo(ptMax.x+ th, height_/2- th -1);
 		}
 		else
 		{
 			memBkDC_.MoveTo(span, ptMin.y);
-			memBkDC_.LineTo(width_- span, ptMin.y);
+			memBkDC_.LineTo(width_- span - 1, ptMin.y);
+			//三角形
+			memBkDC_.MoveTo(width_/2+th-1, ptMin.y+th);
+			memBkDC_.LineTo(width_/2-1, ptMin.y);
+			memBkDC_.LineTo(width_/2-th-1, ptMin.y+th);
+			memBkDC_.LineTo(width_/2+th-1, ptMin.y+th);
+
 			memBkDC_.MoveTo(span, ptMax.y);
-			memBkDC_.LineTo(width_- span, ptMax.y);
+			memBkDC_.LineTo(width_- span - 1, ptMax.y);
+			//三角形
+			memBkDC_.MoveTo(width_ / 2 + th-1, ptMax.y-th);
+			memBkDC_.LineTo(width_/2-1, ptMax.y);
+			memBkDC_.LineTo(width_/2-th-1, ptMax.y-th);
+			memBkDC_.LineTo(width_/2+th-1, ptMax.y-th);
 		}
 	}
 
@@ -327,15 +352,15 @@ int ZSliderCtrl::point2Pos(const CPoint& point)
 	return pos;
 }
 
-CPoint ZSliderCtrl::pos2Point(int pos)
+CPoint ZSliderCtrl::pos2Point(int pos, int df)
 {
 	CPoint point;
 
 	pos = (pos < GetRangeMin()) ? GetRangeMin() : pos;
 	pos = (pos > GetRangeMax()) ? GetRangeMax() : pos;
 
-	point.x = width_ / 2;
-	point.y = height_ / 2;
+	point.x = width_ / 2 + df;
+	point.y = height_ / 2 + df;
 
 	if (range_ <= 0)
 		return point;
@@ -401,5 +426,12 @@ void ZSliderCtrl::OnMouseMove(UINT nFlags, CPoint point)
 		else callbackMessage(WM_SLIDER_HOVER, pos);
 	}
 }
-// F:\AVPlay\AVPlayer\ZSliderCtrl.cpp : 实现文件
-//
+
+void ZSliderCtrl::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CSliderCtrl::OnRButtonUp(nFlags, point);
+
+	posSelectMax_ = posSelectMin_ = 0;
+	drawBk();
+}
