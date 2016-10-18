@@ -12,7 +12,7 @@ class ZSliderCtrl : public CSliderCtrl
 	DECLARE_DYNAMIC(ZSliderCtrl)
 
 public:
-	ZSliderCtrl(BOOL isHorz = TRUE);
+	ZSliderCtrl();
 	virtual ~ZSliderCtrl();
 
 	int SetPos(int pos);
@@ -92,11 +92,7 @@ protected:
 	CPoint pos2Point(int pos, int df = 0);
 
 protected:
-	DECLARE_MESSAGE_MAP()
-	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-public:
-	afx_msg void OnPaint();
-	afx_msg void OnNMThemeChanged(NMHDR *pNMHDR, LRESULT *pResult);
+	virtual void PreSubclassWindow();
 
 protected:
 	COLORREF colorBk_;
@@ -129,6 +125,8 @@ protected:
 	CWnd* pwndCallback_;
 
 public:
+	DECLARE_MESSAGE_MAP()
+	afx_msg void OnPaint();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);

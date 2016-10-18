@@ -2,19 +2,14 @@
 //
 
 #include "stdafx.h"
-#include "AVPlayer.h"
 #include "ZSliderCtrl.h"
-
-#include "base/timestamp.h"
-
-
 
 // ZSliderCtrl
 
 IMPLEMENT_DYNAMIC(ZSliderCtrl, CSliderCtrl)
 
-ZSliderCtrl::ZSliderCtrl(BOOL isHorz)
-	: isHorz_(isHorz)
+ZSliderCtrl::ZSliderCtrl()
+	: isHorz_(TRUE)
 	, pwndCallback_(NULL)
 	, pos_(0)
 	, posSelectMin_(0)
@@ -38,7 +33,7 @@ ZSliderCtrl::ZSliderCtrl(BOOL isHorz)
 		CLIP_DEFAULT_PRECIS,       // nClipPrecision
 		DEFAULT_QUALITY,           // nQuality
 		DEFAULT_PITCH | FF_SWISS,  // nPitchAndFamily
-		"Arial");
+		_T("Arial"));
 
 }
 
@@ -62,7 +57,6 @@ int ZSliderCtrl::SetPos(int pos)
 
 BEGIN_MESSAGE_MAP(ZSliderCtrl, CSliderCtrl)
 	ON_WM_PAINT()
-	ON_NOTIFY_REFLECT(NM_THEMECHANGED, &ZSliderCtrl::OnNMThemeChanged)
 	ON_WM_SIZE()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
@@ -71,6 +65,16 @@ BEGIN_MESSAGE_MAP(ZSliderCtrl, CSliderCtrl)
 END_MESSAGE_MAP()
 
 // ZSliderCtrl 消息处理程序
+
+void ZSliderCtrl::PreSubclassWindow()
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	WINDOWINFO wi;
+	this->GetWindowInfo(&wi);
+	isHorz_ = ((wi.dwStyle&TBS_VERT) == 0);
+
+	CSliderCtrl::PreSubclassWindow();
+}
 
 void ZSliderCtrl::ResetMDC()
 {
@@ -239,11 +243,39 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 
 	float pos = GetPos() - GetRangeMin();
 
-	static const int W = 11;
+	static const int H_MAX = 30;
+	static const int H_MIN = 10;
 	static const int H_SPAN = 2;
+	static const int W_MIN = 9;
 
-	widthBall_ = isHorz_ ? W : (width_ - H_SPAN*2 + 1);
-	heightBall_ = isHorz_ ? (height_ - H_SPAN*2 + 1) : W;
+	if (isHorz_)
+	{
+		heightBall_ = height_ - H_SPAN * 2 + 1;
+		if (heightBall_ > H_MAX)
+			heightBall_ = H_MAX;
+		if (heightBall_ < H_MIN)
+			heightBall_ = H_MIN;
+
+		widthBall_ = heightBall_ / 2;
+		if (widthBall_ % 2 == 0)
+			widthBall_++;
+		if (widthBall_ < W_MIN)
+			widthBall_ = W_MIN;
+	}
+	else
+	{
+		widthBall_ = width_ - H_SPAN*2 + 1;
+		if (widthBall_ > H_MAX)
+			widthBall_ = H_MAX;
+		if (widthBall_ < H_MIN)
+			widthBall_ = H_MIN;
+
+		heightBall_ = widthBall_ / 2;
+		if (heightBall_ % 2 == 0)
+			heightBall_++;
+		if (heightBall_ < W_MIN)
+			heightBall_ = W_MIN;
+	}
 
 	CClientDC dc(this);
 
@@ -290,17 +322,6 @@ void ZSliderCtrl::callbackMessage(UINT msg, WPARAM w)
 	pwnd->PostMessage(msg, w, (LPARAM)this);
 }
 
-BOOL ZSliderCtrl::PreCreateWindow(CREATESTRUCT& cs)
-{
-	// TODO: 在此添加专用代码和/或调用基类
-//	cs.style |= BS_OWNERDRAW;
-
-//	if ((TBS_VERT & cs.style) != 0)
-//		isHorz_ = FALSE;
-
-	return CSliderCtrl::PreCreateWindow(cs);
-}
-
 void ZSliderCtrl::OnPaint()
 {
 	CPaintDC dc(this); // device context for painting
@@ -312,20 +333,12 @@ void ZSliderCtrl::OnPaint()
 	dc.BitBlt(0, 0, width_, height_, &memDC_, 0, 0, SRCCOPY);
 }
 
-void ZSliderCtrl::OnNMThemeChanged(NMHDR *pNMHDR, LRESULT *pResult)
-{
-	// 该功能要求使用 Windows XP 或更高版本。
-	// 符号 _WIN32_WINNT 必须 >= 0x0501。
-	// TODO: 在此添加控件通知处理程序代码
-	*pResult = 0;
-	ResetMDC();
-}
-
 void ZSliderCtrl::OnSize(UINT nType, int cx, int cy)
 {
 	CSliderCtrl::OnSize(nType, cx, cy);
 
 	// TODO: 在此处添加消息处理程序代码
+	DestroyBall();
 	ResetMDC();
 }
 

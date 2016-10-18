@@ -14,7 +14,6 @@ IMPLEMENT_DYNAMIC(CVolumeDlg, CDialogEx)
 CVolumeDlg::CVolumeDlg()
 	: CDialogEx(IDD_VOLUME_DLG, NULL)
 	, player_(NULL)
-	, slider_(FALSE)
 {
 
 }
