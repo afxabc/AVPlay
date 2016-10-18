@@ -251,30 +251,21 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 	memBmpBall_.CreateCompatibleBitmap(&dc, widthBall_, heightBall_);
 	memDCBall_.SelectObject(&memBmpBall_);
 
-	static const COLORREF clrDark = RGB(0, 0, 0);
-	static const COLORREF clrLight = RGB(64, 64, 64);
-
-	int rectBold = 1;
+	static const COLORREF clrPen = RGB(64, 64, 64);
+	static const COLORREF clrPenPush = RGB(0, 64, 128);
 	CPen penLine;
 	CPen penRect;
-	if (isPush)
-	{
-		penLine.CreatePen(PS_SOLID, 1, clrDark);
-		rectBold = 2;
-		penRect.CreatePen(PS_SOLID, rectBold, clrDark);
-	}
-	else
-	{
-		penLine.CreatePen(PS_SOLID, 1, clrLight);
-		penRect.CreatePen(PS_SOLID, rectBold, clrLight);
-	}
+	penLine.CreatePen(PS_SOLID, 1, isPush ? clrPenPush:clrPen);
+	penRect.CreatePen(PS_SOLID, 1, isPush ? clrPenPush : clrPen);
 
+	static const COLORREF clrBallBk = GetSysColor(COLOR_3DFACE);
+	static const COLORREF clrBallBkPush = RGB(128, 192, 255); //GetSysColor(COLOR_3DFACE);
 	CBrush brushRect;
-	brushRect.CreateSolidBrush(GetSysColor(COLOR_3DFACE));
+	brushRect.CreateSolidBrush(isPush? clrBallBkPush:clrBallBk);
 
 	memDCBall_.SelectObject(&penRect);
 	memDCBall_.SelectObject(&brushRect);
-	memDCBall_.Rectangle(rectBold-1, rectBold-1, widthBall_, heightBall_);
+	memDCBall_.Rectangle(0, 0, widthBall_, heightBall_);
 
 	memDCBall_.SelectObject(&penLine);
 	if (isHorz_)
