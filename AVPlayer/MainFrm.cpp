@@ -113,8 +113,56 @@ void CMainFrame::OnResetSize(int width, int height)
 	this->CenterWindow();
 }
 
-void CMainFrame::OnResetSizeFullScreen(int width, int height)
+void CMainFrame::OnResetSizeFullScreen(bool isFull)
 {
+	if (isFull)
+	{
+		m_wndStatusBar.SetParent(NULL);
+		m_wndStatusBar.ShowWindow(SW_HIDE);
+
+		int full_x = GetSystemMetrics(SM_CXSCREEN);
+		int full_y = GetSystemMetrics(SM_CYSCREEN);
+
+		m_wndView.SetParent(NULL);
+		m_wndView.SetWindowPos(&CWnd::wndTopMost, 0, 0, full_x, full_y, 0);
+
+		RECT r;
+		m_wndToolBar.GetClientRect(&r);
+		m_wndToolBar.SetParent(NULL);
+		m_wndToolBar.SetWindowPos(&CWnd::wndTopMost, 0, full_y-r.bottom, full_x, r.bottom, 0);
+		m_wndToolBar.ShowWindow(SW_HIDE);
+
+		volDlg_.SetWindowPos(&CWnd::wndTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+
+		this->ShowWindow(SW_HIDE);
+	}
+	else
+	{
+		m_wndView.SetParent(this);
+		m_wndView.SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+
+		m_wndToolBar.SetParent(this);
+		m_wndToolBar.SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+		m_wndToolBar.ShowWindow(SW_SHOW);
+
+		volDlg_.SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+
+		m_wndStatusBar.SetParent(this);
+		m_wndStatusBar.ShowWindow(SW_SHOW);
+
+		this->ShowWindow(SW_RESTORE);
+		RecalcLayout();
+	}
+	resizeSlider();
+	m_wndView.SetActiveWindow();
+}
+
+void CMainFrame::OnShowToolbar(BOOL show)
+{
+	if (show && !m_wndToolBar.IsWindowVisible())
+		m_wndToolBar.ShowWindow(SW_SHOW);
+	else if (!show && m_wndToolBar.IsWindowVisible())
+		m_wndToolBar.ShowWindow(SW_HIDE);
 }
 
 void CMainFrame::ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
@@ -180,7 +228,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	tooltip_.Create(this);
 	tooltip_.Activate(TRUE);
-	tooltip_.AddTool(&m_slider, "0000");
+	tooltip_.AddTool(&m_slider, "00:00");
 	tooltip_.SetDelayTime(100);
 
 	volDlg_.Create(&player_, this);
@@ -343,6 +391,7 @@ void CMainFrame::OnFileOpen()
 {
 	// TODO: 在此添加命令处理程序代码
 	CFileDialog fdlg(TRUE);
+
 	if (fdlg.DoModal() != IDOK)
 		return;
 
@@ -465,6 +514,11 @@ void CMainFrame::OnUpdateVolume(CCmdUI *pCmdUI)
 void CMainFrame::OnVolume()
 {
 	// TODO: 在此添加命令处理程序代码
+	if (volDlg_.IsWindowVisible())
+	{
+		volDlg_.ShowWindow(SW_HIDE);
+		return;
+	}
 
 	int index = m_wndToolBar.CommandToIndex(ID_VOLUME_BAR);
 	RECT rect;
@@ -536,7 +590,9 @@ void CMainFrame::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 
 	// TODO: 在此处添加消息处理程序代码
 	if (!bMinimized)
+	{
 		m_wndView.ReDraw();
+	}
 }
 
 LRESULT CMainFrame::OnSliderChange(WPARAM w, LPARAM l)

@@ -7,7 +7,8 @@ class IDrawWndCallback
 {
 public:
 	virtual void OnResetSize(int width, int height) = 0;
-	virtual void OnResetSizeFullScreen(int width, int height) = 0;
+	virtual void OnResetSizeFullScreen(bool isFull) = 0;
+	virtual void OnShowToolbar(BOOL show) = 0;
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
 };
 

@@ -186,13 +186,19 @@ void CDrawWnd::OnMouseMove(UINT nFlags, CPoint point)
 		UpdateCoordinate(TRUE);
 		posMove_ = point;
 	}
+	else if (isFullScreen_)
+	{
+		int full_y = GetSystemMetrics(SM_CYSCREEN);
+		if (cb_)
+			cb_->OnShowToolbar(point.y > full_y - 100);
+	}
 }
 
 void CDrawWnd::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
 	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
-//	UpdateCoordinate(TRUE);
+	UpdateCoordinate(TRUE);
 	OnWindowFit();
 }
 
@@ -227,9 +233,8 @@ void CDrawWnd::OnInitSize()
 	if (isFullScreen_)
 	{
 		isFullScreen_ = false;
-		SetParent(parent_);
-		SetWindowPos(&CWnd::wndBottom, 0, 0, width_, height_, 0);
-		parent_->RecalcLayout(1);
+		if (cb_)
+			cb_->OnResetSizeFullScreen(false);
 	}
 
 	scale_ = 100;
@@ -291,10 +296,12 @@ void CDrawWnd::OnFullScreen()
 
 	isFullScreen_ = true;
 
-	SetParent(NULL);
-	SetWindowPos(&CWnd::wndTopMost, 0, 0, full_x, full_y, 0);
+	if (cb_)
+		cb_->OnResetSizeFullScreen(true);
+
 	UpdateCoordinate(TRUE);
 	this->SetFocus();
+	
 }
 
 void CDrawWnd::OnResetDevice()

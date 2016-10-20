@@ -21,7 +21,8 @@ protected:
 // 特性
 public:
 	virtual void OnResetSize(int width, int height); 
-	virtual void OnResetSizeFullScreen(int width, int height);
+	virtual void OnResetSizeFullScreen(bool isFull);
+	virtual void OnShowToolbar(BOOL show);
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 
 // 操作
@@ -57,6 +58,7 @@ protected:  // 控件条嵌入成员
 	std::atomic_int32_t cmdPending_;
 
 	CToolTipCtrl tooltip_;
+
 
 // 生成的消息映射函数
 protected:
