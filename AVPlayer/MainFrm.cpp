@@ -128,13 +128,14 @@ void CMainFrame::OnResetSizeFullScreen(bool isFull)
 
 		RECT r;
 		m_wndToolBar.GetClientRect(&r);
+		toolbarHeight_ = r.bottom+4;
 		m_wndToolBar.SetParent(NULL);
-		m_wndToolBar.SetWindowPos(&CWnd::wndTopMost, 0, full_y-r.bottom, full_x, r.bottom, 0);
+		m_wndToolBar.SetWindowPos(&CWnd::wndNoTopMost, 0, full_y- toolbarHeight_, full_x, toolbarHeight_, 0);
 		m_wndToolBar.ShowWindow(SW_HIDE);
 
-		volDlg_.SetWindowPos(&CWnd::wndTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+		volDlg_.SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE);
 
-		this->ShowWindow(SW_HIDE);
+	//	this->ShowWindow(SW_HIDE);
 	}
 	else
 	{
@@ -150,19 +151,31 @@ void CMainFrame::OnResetSizeFullScreen(bool isFull)
 		m_wndStatusBar.SetParent(this);
 		m_wndStatusBar.ShowWindow(SW_SHOW);
 
-		this->ShowWindow(SW_RESTORE);
+	//	this->ShowWindow(SW_RESTORE);
 		RecalcLayout();
 	}
 	resizeSlider();
-	m_wndView.SetActiveWindow();
+	m_wndView.SetForegroundWindow();
+	m_wndView.SetFocus();
 }
 
 void CMainFrame::OnShowToolbar(BOOL show)
 {
+	int full_x = GetSystemMetrics(SM_CXSCREEN);
+	int full_y = GetSystemMetrics(SM_CYSCREEN);
 	if (show && !m_wndToolBar.IsWindowVisible())
+	{
+		m_wndToolBar.SetWindowPos(&CWnd::wndTopMost, 0, full_y - toolbarHeight_, full_x, toolbarHeight_, 0);
 		m_wndToolBar.ShowWindow(SW_SHOW);
+		m_wndView.SetFocus();
+	}
 	else if (!show && m_wndToolBar.IsWindowVisible())
+	{
+		m_wndToolBar.SetWindowPos(&CWnd::wndNoTopMost, 0, full_y - toolbarHeight_, full_x, toolbarHeight_, 0);
 		m_wndToolBar.ShowWindow(SW_HIDE);
+		m_wndView.SetFocus();
+	}
+
 }
 
 void CMainFrame::ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)
@@ -392,6 +405,9 @@ void CMainFrame::OnFileOpen()
 	// TODO: 在此添加命令处理程序代码
 	CFileDialog fdlg(TRUE);
 
+	if (m_wndView.isFullScreen())
+		m_wndView.OnInitSize();
+
 	if (fdlg.DoModal() != IDOK)
 		return;
 
@@ -570,6 +586,9 @@ void CMainFrame::OnFrameSave()
 	// Create an Open dialog; the default file name extension is ".my".
 	CFileDialog fileDlg(FALSE, "jpg", finame,
 		OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, szFilters, this);
+
+	if (m_wndView.isFullScreen())
+		m_wndView.OnInitSize();
 
 	if (fileDlg.DoModal() != IDOK)
 		return;

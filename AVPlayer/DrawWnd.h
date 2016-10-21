@@ -46,6 +46,13 @@ public:
 		return frmBak_;
 	}
 
+	bool isFullScreen()
+	{
+		return isFullScreen_;
+	}
+
+	afx_msg void OnInitSize();
+
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)
 	{
@@ -103,7 +110,6 @@ protected:
 	afx_msg void OnRotateAngle();
 	afx_msg void OnZoomIn();
 	afx_msg void OnZoomOut();
-	afx_msg void OnInitSize();
 	afx_msg void OnResetDevice();
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnDrawWndHandle(UINT which);

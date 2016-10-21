@@ -59,7 +59,7 @@ protected:  // 控件条嵌入成员
 
 	CToolTipCtrl tooltip_;
 
-
+	int toolbarHeight_;
 // 生成的消息映射函数
 protected:
 	bool checkFilePath();
