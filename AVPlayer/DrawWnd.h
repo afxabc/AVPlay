@@ -53,6 +53,9 @@ public:
 
 	afx_msg void OnInitSize();
 
+	void procKeyDown(UINT nChar);
+	void procKeyUp(UINT nChar);
+
 protected:
 	void UpdateCoordinate(BOOL render = FALSE)
 	{
@@ -93,6 +96,8 @@ protected:
 	CFrameWnd* parent_;
 	bool isFullScreen_;
 
+	bool isMoved_;
+
 protected:
 	DECLARE_MESSAGE_MAP()
 
@@ -119,6 +124,8 @@ protected:
 	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+public:
+	afx_msg void OnClose();
 };
 
 

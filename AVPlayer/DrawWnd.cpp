@@ -30,6 +30,7 @@ CDrawWnd::CDrawWnd()
 	, idHandle_(0)
 	, keyDown_(false)
 	, isFullScreen_(false)
+	, isMoved_(false)
 {
 }
 
@@ -100,6 +101,7 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_WM_KEYUP()
 	ON_COMMAND(IDC_WINDOW_FIT, &CDrawWnd::OnWindowFit)
 	ON_WM_MBUTTONUP()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -160,6 +162,7 @@ void CDrawWnd::OnLButtonDown(UINT nFlags, CPoint point)
 	CWnd::OnLButtonDown(nFlags, point);
 	SetCapture();
 	posMove_ = point;
+	isMoved_ = false;
 }
 
 void CDrawWnd::OnLButtonUp(UINT nFlags, CPoint point)
@@ -172,6 +175,9 @@ void CDrawWnd::OnLButtonUp(UINT nFlags, CPoint point)
 		xPos_ += (point.x - posMove_.x);
 		yPos_ += (point.y - posMove_.y);
 		UpdateCoordinate(TRUE);
+
+		if (!isMoved_)
+			parent_->PostMessage(WM_COMMAND, ID_FILE_PAUSE);
 	}
 }
 
@@ -185,6 +191,7 @@ void CDrawWnd::OnMouseMove(UINT nFlags, CPoint point)
 		yPos_ += (point.y - posMove_.y);
 		UpdateCoordinate(TRUE);
 		posMove_ = point;
+		isMoved_ = true;
 	}
 	else if (isFullScreen_)
 	{
@@ -254,7 +261,16 @@ void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
 	RECT r;
 	this->GetClientRect(&r);
 
-	if (isFullScreen_ || scale_!=100)
+	if (!isMoved_)
+		parent_->PostMessage(WM_COMMAND, ID_FILE_PAUSE);
+
+	if (xPos_ != 0 || yPos_ != 0)
+	{
+		xPos_ = 0;
+		yPos_ = 0;
+		UpdateCoordinate(TRUE);
+	}
+	else if (isFullScreen_ || scale_!=100)
 		OnInitSize();
 	else OnFullScreen();
 }
@@ -361,9 +377,8 @@ void CDrawWnd::OnUpdateShowVertex(CCmdUI * pCmdUI)
 	pCmdUI->SetCheck(IDC_SHOW_D3DVERTEX == idHandle_);
 }
 
-void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CDrawWnd::procKeyDown(UINT nChar)
 {
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	switch (nChar)
 	{
 	case VK_SPACE:
@@ -385,13 +400,32 @@ void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 
 	keyDown_ = true;
+}
 
+void CDrawWnd::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	procKeyDown(nChar);
 	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+void CDrawWnd::procKeyUp(UINT nChar)
+{
+	keyDown_ = false;
 }
 
 void CDrawWnd::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	keyDown_ = false;
+	procKeyUp(nChar);
 	CWnd::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+void CDrawWnd::OnClose()
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (isFullScreen_)
+		return;
+
+	CWnd::OnClose();
 }

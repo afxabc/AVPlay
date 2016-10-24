@@ -133,9 +133,10 @@ void CMainFrame::OnResetSizeFullScreen(bool isFull)
 		m_wndToolBar.SetWindowPos(&CWnd::wndNoTopMost, 0, full_y- toolbarHeight_, full_x, toolbarHeight_, 0);
 		m_wndToolBar.ShowWindow(SW_HIDE);
 
-		volDlg_.SetWindowPos(&CWnd::wndNoTopMost, 0, 0, 0, 0, SWP_NOSIZE);
+		volDlg_.SetWindowPos(&CWnd::wndTopMost, 0, 0, 0, 0, SWP_NOSIZE);
 
-	//	this->ShowWindow(SW_HIDE);
+		this->ShowWindow(SW_HIDE);
+		this->SetForegroundWindow();
 	}
 	else
 	{
@@ -151,7 +152,7 @@ void CMainFrame::OnResetSizeFullScreen(bool isFull)
 		m_wndStatusBar.SetParent(this);
 		m_wndStatusBar.ShowWindow(SW_SHOW);
 
-	//	this->ShowWindow(SW_RESTORE);
+		this->ShowWindow(SW_RESTORE);
 		RecalcLayout();
 	}
 	resizeSlider();
@@ -172,6 +173,7 @@ void CMainFrame::OnShowToolbar(BOOL show)
 	else if (!show && m_wndToolBar.IsWindowVisible())
 	{
 		m_wndToolBar.SetWindowPos(&CWnd::wndNoTopMost, 0, full_y - toolbarHeight_, full_x, toolbarHeight_, 0);
+		volDlg_.ShowWindow(SW_HIDE);
 		m_wndToolBar.ShowWindow(SW_HIDE);
 		m_wndView.SetFocus();
 	}
@@ -661,6 +663,13 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 {
 	// TODO: 在此添加专用代码和/或调用基类
 	tooltip_.RelayEvent(pMsg);
+	if (m_wndView.isFullScreen())
+	{
+		if (pMsg->message == WM_KEYDOWN)
+			m_wndView.procKeyDown(pMsg->wParam);
+		else if (pMsg->message == WM_KEYUP)
+			m_wndView.procKeyUp(pMsg->wParam);
+	}
 	return __super::PreTranslateMessage(pMsg);
 }
 

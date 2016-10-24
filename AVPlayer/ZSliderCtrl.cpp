@@ -243,7 +243,7 @@ bool ZSliderCtrl::ResetBall(bool isPush)
 
 	float pos = GetPos() - GetRangeMin();
 
-	static const int H_MAX = 30;
+	static const int H_MAX = 25;
 	static const int H_MIN = 10;
 	static const int H_SPAN = 2;
 	static const int W_MIN = 9;
