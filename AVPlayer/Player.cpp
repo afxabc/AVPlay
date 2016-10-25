@@ -207,8 +207,6 @@ void Player::closeInput()
 	if (swrContext_)
 		swr_free(&swrContext_), swrContext_ = NULL;
 
-	aPlay_.stop();
-
 	avformat_close_input(&pFormatCtx_);
 }
 
@@ -222,6 +220,8 @@ void Player::stopPlay(bool close_input)
 	sigPlay_.on();
 	if (thPlay_.started())
 		thPlay_.stop();
+
+	aPlay_.stop();
 
 	if (close_input)
 		closeInput();

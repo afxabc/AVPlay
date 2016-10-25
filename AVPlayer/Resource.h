@@ -29,6 +29,8 @@
 #define IDC_SELECT_START                32808
 #define IDC_SELECT_END                  32809
 #define IDC_PLAY_CIRCLE                 32810
+#define ID_32811                        32811
+#define IDC_AUTO_FIT                    32812
 #define IDC_SHOW_START                  35000
 #define IDC_SHOW_DIRECTDRAW             35001
 #define IDC_SHOW_D3DSURFACE             35002
@@ -41,7 +43,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        319
-#define _APS_NEXT_COMMAND_VALUE         32811
+#define _APS_NEXT_COMMAND_VALUE         32813
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           311
 #endif

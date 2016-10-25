@@ -527,6 +527,7 @@ void CMainFrame::OnUpdateVolume(CCmdUI *pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码
 	pCmdUI->SetCheck(volDlg_.IsWindowVisible());
+	pCmdUI->Enable(player_.isVolumePlaying());
 }
 
 void CMainFrame::OnVolume()
@@ -537,6 +538,9 @@ void CMainFrame::OnVolume()
 		volDlg_.ShowWindow(SW_HIDE);
 		return;
 	}
+
+	if (!player_.isVolumePlaying())
+		return;
 
 	int index = m_wndToolBar.CommandToIndex(ID_VOLUME_BAR);
 	RECT rect;

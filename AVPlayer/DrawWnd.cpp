@@ -31,6 +31,7 @@ CDrawWnd::CDrawWnd()
 	, keyDown_(false)
 	, isFullScreen_(false)
 	, isMoved_(false)
+	, autoFit_(false)
 {
 }
 
@@ -100,6 +101,8 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
 	ON_COMMAND(IDC_WINDOW_FIT, &CDrawWnd::OnWindowFit)
+	ON_COMMAND(IDC_AUTO_FIT, &CDrawWnd::OnAutoFit)
+	ON_UPDATE_COMMAND_UI(IDC_AUTO_FIT, &CDrawWnd::OnUpdateAutoFit)
 	ON_WM_MBUTTONUP()
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
@@ -205,8 +208,10 @@ void CDrawWnd::OnRotateAngle()
 {
 	// TODO: 在此添加命令处理程序代码
 	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
-	UpdateCoordinate(TRUE);
-	OnWindowFit();
+	
+	if (autoFit_ && !isFullScreen_)
+		OnWindowFit();
+	else UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnZoomIn()
@@ -216,9 +221,9 @@ void CDrawWnd::OnZoomIn()
 	if (scale_ < 500)
 		scale_ += SPAN;
 
-	if (isFullScreen_)
-		UpdateCoordinate(TRUE);
-	else OnWindowFit();
+	if (autoFit_ && !isFullScreen_)
+		OnWindowFit();
+	else UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnZoomOut()
@@ -228,9 +233,9 @@ void CDrawWnd::OnZoomOut()
 	if (scale_ > 20)
 		scale_ -= SPAN;
 
-	if (isFullScreen_)
-		UpdateCoordinate(TRUE);
-	else OnWindowFit();
+	if (autoFit_ && !isFullScreen_)
+		OnWindowFit();
+	else UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnInitSize()
@@ -284,7 +289,7 @@ void CDrawWnd::OnMButtonUp(UINT nFlags, CPoint point)
 
 void CDrawWnd::OnWindowFit()
 {
-	// TODO: 在此添加命令处理程序代码
+	// TODO: 在此添加命令处理程序代码3
 	if (isFullScreen_)
 		return;
 
@@ -296,6 +301,19 @@ void CDrawWnd::OnWindowFit()
 	int height = (rotation_ == ROTATION_0 || rotation_ == ROTATION_180) ? height_ : width_;
 	if (cb_)
 		cb_->OnResetSize(width*scale_/100, height*scale_/100);
+}
+
+void CDrawWnd::OnAutoFit()
+{
+	autoFit_ = !autoFit_;
+	if (autoFit_)
+		OnWindowFit();
+}
+
+void CDrawWnd::OnUpdateAutoFit(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->SetCheck(autoFit_);
 }
 
 void CDrawWnd::OnFullScreen()

@@ -237,7 +237,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\AVPlayer.ico" />
-    <Image Include="res\icon1.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

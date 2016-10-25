@@ -97,6 +97,7 @@ protected:
 	bool isFullScreen_;
 
 	bool isMoved_;
+	bool autoFit_;
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -106,6 +107,7 @@ protected:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnWindowFit();
+	afx_msg void OnAutoFit();
 	afx_msg void OnFullScreen();
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
@@ -126,6 +128,7 @@ protected:
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 public:
 	afx_msg void OnClose();
+	afx_msg void OnUpdateAutoFit(CCmdUI *pCmdUI);
 };
 
 

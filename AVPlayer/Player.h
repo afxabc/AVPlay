@@ -101,6 +101,11 @@ public:
 
 	void onTimer();
 
+	bool isVolumePlaying()
+	{
+		return (aPlay_.isStart());
+	}
+
 	int setVolume(int vol) { return aPlay_.setVolume(vol); }
 	int getVolume() { return aPlay_.getVolume(); }
 

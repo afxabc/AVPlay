@@ -94,8 +94,6 @@ BEGIN
     SEPARATOR
     BUTTON      ID_FRAME_SAVE
     SEPARATOR
-    BUTTON      IDC_WINDOW_FIT
-    SEPARATOR
     BUTTON      IDC_SELECT_START
     BUTTON      IDC_SELECT_END
     BUTTON      IDC_PLAY_CIRCLE
@@ -145,6 +143,7 @@ BEGIN
         MENUITEM "画面旋转",                        IDC_ROTATE_ANGLE
         MENUITEM SEPARATOR
         MENUITEM "窗口适应",                        IDC_WINDOW_FIT
+        MENUITEM "窗口自适应",                       IDC_AUTO_FIT
     END
     POPUP "视图(&V)"
     BEGIN
@@ -403,6 +402,7 @@ BEGIN
     IDC_SELECT_START        "选择起点\n选择起点"
     IDC_SELECT_END          "选择终点\n选择终点"
     IDC_PLAY_CIRCLE         "循环播放\n循环播放"
+    IDC_AUTO_FIT            "窗口自适应\n窗口自适应"
 END
 
 #endif    // 中文(简体，中国) resources
