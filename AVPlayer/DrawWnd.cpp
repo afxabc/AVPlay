@@ -31,7 +31,10 @@ CDrawWnd::CDrawWnd()
 	, keyDown_(false)
 	, isFullScreen_(false)
 	, isMoved_(false)
-	, autoFit_(false)
+	, wndFitFrm_(false)
+	, frmFitWnd_(true)
+	, tickCursor_(0)
+	, hideCursor_(0)
 {
 }
 
@@ -101,10 +104,13 @@ BEGIN_MESSAGE_MAP(CDrawWnd, CWnd)
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
 	ON_COMMAND(IDC_WINDOW_FIT, &CDrawWnd::OnWindowFit)
-	ON_COMMAND(IDC_AUTO_FIT, &CDrawWnd::OnAutoFit)
-	ON_UPDATE_COMMAND_UI(IDC_AUTO_FIT, &CDrawWnd::OnUpdateAutoFit)
+	ON_COMMAND(IDC_WND_FIT_FRM, &CDrawWnd::OnWndFitFrm)
+	ON_UPDATE_COMMAND_UI(IDC_WND_FIT_FRM, &CDrawWnd::OnUpdateWndFitFrm)
 	ON_WM_MBUTTONUP()
 	ON_WM_CLOSE()
+	ON_COMMAND(IDC_FRM_FIT_WND, &CDrawWnd::OnFrmFitWnd)
+	ON_UPDATE_COMMAND_UI(IDC_FRM_FIT_WND, &CDrawWnd::OnUpdateFrmFitWnd)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 // CDrawWnd 消息处理程序
@@ -201,6 +207,12 @@ void CDrawWnd::OnMouseMove(UINT nFlags, CPoint point)
 		int full_y = GetSystemMetrics(SM_CYSCREEN);
 		if (cb_)
 			cb_->OnShowToolbar(point.y > full_y - 100);
+
+		if (point.y > full_y - 100)
+			tickCursor_ = TICK_CURSOR_MAX + 1;
+		else tickCursor_ = 0;
+
+		showCursor();
 	}
 }
 
@@ -209,8 +221,10 @@ void CDrawWnd::OnRotateAngle()
 	// TODO: 在此添加命令处理程序代码
 	rotation_ = (ROTATIONTYPE)((rotation_ + 1) % ROTATION_N);
 	
-	if (autoFit_ && !isFullScreen_)
+	if (wndFitFrm_ && !isFullScreen_)
 		OnWindowFit();
+	else if (frmFitWnd_)
+		OnFrameFit();
 	else UpdateCoordinate(TRUE);
 }
 
@@ -221,7 +235,7 @@ void CDrawWnd::OnZoomIn()
 	if (scale_ < 500)
 		scale_ += SPAN;
 
-	if (autoFit_ && !isFullScreen_)
+	if (wndFitFrm_ && !isFullScreen_)
 		OnWindowFit();
 	else UpdateCoordinate(TRUE);
 }
@@ -233,7 +247,7 @@ void CDrawWnd::OnZoomOut()
 	if (scale_ > 20)
 		scale_ -= SPAN;
 
-	if (autoFit_ && !isFullScreen_)
+	if (wndFitFrm_ && !isFullScreen_)
 		OnWindowFit();
 	else UpdateCoordinate(TRUE);
 }
@@ -244,16 +258,18 @@ void CDrawWnd::OnInitSize()
 
 	if (isFullScreen_)
 	{
+		KillTimer(1);
 		isFullScreen_ = false;
+		showCursor();
 		if (cb_)
 			cb_->OnResetSizeFullScreen(false);
 	}
 
 	scale_ = 100;
 //	rotation_ = ROTATION_0;
-	UpdateCoordinate(TRUE);
+//	UpdateCoordinate(TRUE);
 
-	this->PostMessage(WM_COMMAND, IDC_WINDOW_FIT);
+	OnWindowFit();
 }
 
 void CDrawWnd::OnLButtonDblClk(UINT nFlags, CPoint point)
@@ -303,39 +319,72 @@ void CDrawWnd::OnWindowFit()
 		cb_->OnResetSize(width*scale_/100, height*scale_/100);
 }
 
-void CDrawWnd::OnAutoFit()
+void CDrawWnd::OnWndFitFrm()
 {
-	autoFit_ = !autoFit_;
-	if (autoFit_)
+	wndFitFrm_ = !wndFitFrm_;
+	if (wndFitFrm_)
+	{
+		frmFitWnd_ = false;
 		OnWindowFit();
+	}
 }
 
-void CDrawWnd::OnUpdateAutoFit(CCmdUI *pCmdUI)
+void CDrawWnd::OnUpdateWndFitFrm(CCmdUI *pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码
-	pCmdUI->SetCheck(autoFit_);
+	pCmdUI->SetCheck(wndFitFrm_);
+}
+
+void CDrawWnd::OnFrameFit()
+{
+	// TODO: 在此添加命令处理程序代码3
+	int width = (rotation_ == ROTATION_0 || rotation_ == ROTATION_180) ? width_ : height_;
+	int height = (rotation_ == ROTATION_0 || rotation_ == ROTATION_180) ? height_ : width_;
+
+	if (width <= 0 || height <= 0)
+		return;
+
+	float scalex = (float)WIDTH_ * 100 / width;
+	float scaley = (float)HEIGHT_ * 100 / height;
+
+	scale_ = (scalex > scaley) ? scaley : scalex;
+	if (abs(scale_ - 100) <= 2)
+		scale_ = 100;
+
+	UpdateCoordinate(TRUE);
+}
+
+void CDrawWnd::OnFrmFitWnd()
+{
+	// TODO: 在此添加命令处理程序代码
+	frmFitWnd_ = !frmFitWnd_;
+	if (frmFitWnd_)
+	{
+		wndFitFrm_ = false;
+		OnFrameFit();
+	}
+}
+
+void CDrawWnd::OnUpdateFrmFitWnd(CCmdUI *pCmdUI)
+{
+	// TODO: 在此添加命令更新用户界面处理程序代码
+	pCmdUI->SetCheck(frmFitWnd_);
 }
 
 void CDrawWnd::OnFullScreen()
 {
-	int full_x = GetSystemMetrics(SM_CXSCREEN);
-	int full_y = GetSystemMetrics(SM_CYSCREEN);
-
-	float scalex = (float)full_x * 100 / width_;
-	float scaley = (float)full_y * 100 / height_;
-
 	xPos_ = 0;
 	yPos_ = 0;
-	scale_ = (scalex > scaley) ? scaley : scalex;
 
 	isFullScreen_ = true;
-
+	tickCursor_ = TICK_CURSOR_MAX - 1;
 	if (cb_)
 		cb_->OnResetSizeFullScreen(true);
 
 	UpdateCoordinate(TRUE);
 	this->SetFocus();
 	
+	SetTimer(1, 1000, NULL);
 }
 
 void CDrawWnd::OnResetDevice()
@@ -343,7 +392,9 @@ void CDrawWnd::OnResetDevice()
 	if (pHandle_ == NULL)
 		return;
 
-	UpdateCoordinate(TRUE);
+	if (frmFitWnd_)
+		OnFrameFit();
+	else UpdateCoordinate(TRUE);
 }
 
 void CDrawWnd::OnDrawWndHandle(UINT which)
@@ -446,4 +497,19 @@ void CDrawWnd::OnClose()
 		return;
 
 	CWnd::OnClose();
+}
+
+void CDrawWnd::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (isFullScreen_ && tickCursor_ < TICK_CURSOR_MAX)
+	{
+		tickCursor_++;
+		if (tickCursor_ == TICK_CURSOR_MAX)
+		{
+			hideCursor();
+			LOGW("Hide cursor");
+		}
+	}
+	CWnd::OnTimer(nIDEvent);
 }

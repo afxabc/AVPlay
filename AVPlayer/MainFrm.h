@@ -22,7 +22,7 @@ protected:
 public:
 	virtual void OnResetSize(int width, int height); 
 	virtual void OnResetSizeFullScreen(bool isFull);
-	virtual void OnShowToolbar(BOOL show);
+	virtual BOOL OnShowToolbar(BOOL show);
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd);
 
 // ²Ù×÷

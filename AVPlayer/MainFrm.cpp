@@ -160,7 +160,7 @@ void CMainFrame::OnResetSizeFullScreen(bool isFull)
 	m_wndView.SetFocus();
 }
 
-void CMainFrame::OnShowToolbar(BOOL show)
+BOOL CMainFrame::OnShowToolbar(BOOL show)
 {
 	int full_x = GetSystemMetrics(SM_CXSCREEN);
 	int full_y = GetSystemMetrics(SM_CYSCREEN);
@@ -178,6 +178,7 @@ void CMainFrame::OnShowToolbar(BOOL show)
 		m_wndView.SetFocus();
 	}
 
+	return TRUE;
 }
 
 void CMainFrame::ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd)

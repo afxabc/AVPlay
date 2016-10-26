@@ -29,8 +29,9 @@
 #define IDC_SELECT_START                32808
 #define IDC_SELECT_END                  32809
 #define IDC_PLAY_CIRCLE                 32810
-#define ID_32811                        32811
-#define IDC_AUTO_FIT                    32812
+#define IDC_WND_FIT_FRM                 32811
+#define IDC_FRM_FIT_WND                 32812
+#define IDC_WND_FIT_FRM2                32812
 #define IDC_SHOW_START                  35000
 #define IDC_SHOW_DIRECTDRAW             35001
 #define IDC_SHOW_D3DSURFACE             35002

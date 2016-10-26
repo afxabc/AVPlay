@@ -142,8 +142,9 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "画面旋转",                        IDC_ROTATE_ANGLE
         MENUITEM SEPARATOR
-        MENUITEM "窗口适应",                        IDC_WINDOW_FIT
-        MENUITEM "窗口自适应",                       IDC_AUTO_FIT
+        MENUITEM "调整窗口",                        IDC_WINDOW_FIT
+        MENUITEM "窗口适应画面",                      IDC_WND_FIT_FRM
+        MENUITEM "画面适应窗口",                      IDC_FRM_FIT_WND
     END
     POPUP "视图(&V)"
     BEGIN
@@ -402,7 +403,8 @@ BEGIN
     IDC_SELECT_START        "选择起点\n选择起点"
     IDC_SELECT_END          "选择终点\n选择终点"
     IDC_PLAY_CIRCLE         "循环播放\n循环播放"
-    IDC_AUTO_FIT            "窗口自适应\n窗口自适应"
+    IDC_WND_FIT_FRM         "窗口适应画面\n窗口适应画面"
+    IDC_FRM_FIT_WND         "画面适应窗口\n画面适应窗口"
 END
 
 #endif    // 中文(简体，中国) resources

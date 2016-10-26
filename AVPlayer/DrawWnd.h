@@ -8,7 +8,7 @@ class IDrawWndCallback
 public:
 	virtual void OnResetSize(int width, int height) = 0;
 	virtual void OnResetSizeFullScreen(bool isFull) = 0;
-	virtual void OnShowToolbar(BOOL show) = 0;
+	virtual BOOL OnShowToolbar(BOOL show) = 0;
 	virtual void ReportParams(int scale, ROTATIONTYPE rotate, POINT pos, SIZE szFrm, SIZE szWnd) = 0;
 };
 
@@ -72,6 +72,24 @@ protected:
 
 	bool checkForEdge();
 
+	inline void showCursor()
+	{
+		while (hideCursor_ > 0)
+		{
+			ShowCursor(TRUE);
+			hideCursor_--;
+		}
+	}
+
+	inline void hideCursor()
+	{
+		while (hideCursor_ <= 0)
+		{
+			ShowCursor(FALSE);
+			hideCursor_++;
+		}
+	}
+
 protected:
 	IDrawWndCallback* cb_;
 
@@ -97,7 +115,12 @@ protected:
 	bool isFullScreen_;
 
 	bool isMoved_;
-	bool autoFit_;
+	bool wndFitFrm_;
+	bool frmFitWnd_;
+
+	int tickCursor_;
+	int hideCursor_;
+	static const int TICK_CURSOR_MAX = 3;
 
 protected:
 	DECLARE_MESSAGE_MAP()
@@ -107,7 +130,7 @@ protected:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnWindowFit();
-	afx_msg void OnAutoFit();
+	afx_msg void OnFrameFit();
 	afx_msg void OnFullScreen();
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
@@ -126,9 +149,12 @@ protected:
 	afx_msg void OnUpdateShowVertex(CCmdUI *pCmdUI);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
-public:
 	afx_msg void OnClose();
-	afx_msg void OnUpdateAutoFit(CCmdUI *pCmdUI);
+	afx_msg void OnWndFitFrm();
+	afx_msg void OnUpdateWndFitFrm(CCmdUI *pCmdUI);
+	afx_msg void OnFrmFitWnd();
+	afx_msg void OnUpdateFrmFitWnd(CCmdUI *pCmdUI);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
 
