@@ -26,6 +26,7 @@
 *.user
 *.sdf
 *.ipch
+*.db
 
 [dD]ebug/
 [rR]elease/
